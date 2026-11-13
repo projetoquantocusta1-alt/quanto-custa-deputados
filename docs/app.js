@@ -32,6 +32,13 @@
     if (a >= 1e9) return "R$ " + (v / 1e9).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " bi";
     if (a >= 1e6) return "R$ " + (v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " mi";
     return brl(v); };
+// valor por extenso para ler números grandes: 2.193.266.731 -> "≈ 2,19 bilhões de reais"
+const porExtenso = (v) => { const a = Math.abs(v || 0);
+  for (const [b, um, varios] of [[1e12, "trilhão", "trilhões"], [1e9, "bilhão", "bilhões"], [1e6, "milhão", "milhões"], [1e3, "mil", "mil"]]) {
+    if (a < b) continue;
+    const x = v / b, t = x.toLocaleString("pt-BR", { maximumFractionDigits: Math.abs(x) < 10 ? 2 : Math.abs(x) < 100 ? 1 : 0 });
+    return b === 1e3 ? `≈ ${t} mil reais` : `≈ ${t} ${Math.abs(x) < 2 ? um : varios} de reais`; }
+  return ""; };
   const brl = (v, dec = 0) => (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: dec, minimumFractionDigits: dec });
   const nf = (v, d = 0) => (v || 0).toLocaleString("pt-BR", { maximumFractionDigits: d, minimumFractionDigits: d });
   const compacto = (v) => {
@@ -185,6 +192,8 @@
       const v = Math.min(teto, ja + Math.max(0, (Date.now() - ini) / 1000) * porSeg);
       $("#imp-valor").textContent = brl(v, 2);
       $("#imp-total").textContent = brl(totalAnt + v * (r.fator_ipca || 1), 0);
+      $("#imp-total-ext").textContent = porExtenso(totalAnt + v * (r.fator_ipca || 1));
+      $("#imp-valor-ext").textContent = porExtenso(v);
       if (E.pag === "inicio") tick = requestAnimationFrame(passo);
     };
     passo();
@@ -1755,6 +1764,7 @@
     const quem = temFiltro() ? `dos ${nf(deps.length)} deputados do filtro` : "dos deputados federais";
     $("#dv-sub").textContent = `${pct} do que a cota ${quem} gastou com transporte, alimentação, hospedagem e divulgação ${tot ? "em todos os anos" : "em " + E.resumo.ano}, em valores de hoje:`;
     $("#dv-total").textContent = precisaIpca ? "ligue “Valores de hoje”" : brl(exc);
+    $("#dv-ext").textContent = precisaIpca ? "" : porExtenso(exc);
     $("#dv-regra").textContent = `Base: ${brl(base)} gastos nesses grupos × ${pct}.`;
     const n = (x) => (x >= 10 ? nf(Math.floor(x)) : nf(x, 1));
     const cards = R.itens.map((it) => {

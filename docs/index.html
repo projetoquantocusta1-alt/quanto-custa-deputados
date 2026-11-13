@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 <link rel="stylesheet" href="tema.css?v=14">
 </head>
 <body>
@@ -90,9 +90,10 @@
         </form>
         <p class="destaque-rot" id="d-rot">Todos os deputados federais já custaram, desde 2009,</p>
         <div class="destaque-valor" id="imp-total">—</div>
+        <p class="extenso" id="imp-total-ext"></p>
         <p class="destaque-nota">em valores de hoje, <b>corrigidos pela inflação (<span class="termo" tabindex="0" data-t="ipca">IPCA</span>)</b> · salário, ajudas, auxílio-moradia, <span class="termo" tabindex="0" data-t="ceap">cota parlamentar</span> e <span class="termo" tabindex="0" data-t="gabinete">verba de gabinete</span></p>
         <div class="contador-linha" aria-live="off">
-          <div><span id="imp-rot">Só neste ano</span><b id="imp-valor">R$ 0,00</b></div>
+          <div><span id="imp-rot">Só neste ano</span><b id="imp-valor">R$ 0,00</b><small class="extenso" id="imp-valor-ext"></small></div>
           <div><span>por segundo</span><b id="imp-seg">—</b></div>
           <div><span>por dia</span><b id="imp-dia">—</b></div>
           <div><span>previsão para o ano</span><b id="imp-prev">—</b></div>
@@ -355,6 +356,7 @@
       <div class="dava-topo visual">
         <p class="sub" id="dv-sub"></p>
         <div class="destaque-valor" id="dv-total">—</div>
+        <p class="extenso" id="dv-ext"></p>
         <p class="sub" id="dv-regra"></p>
       </div>
       <div class="dava-cards" id="dv-cards"></div>
@@ -483,6 +485,6 @@
 <script src="vendor/mapa-brasil.js"></script>
 <script src="textos.js?v=13"></script>
 <script src="referencias.js?v=13"></script>
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>
