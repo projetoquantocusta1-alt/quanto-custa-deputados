@@ -7,7 +7,7 @@ oficiais.
 
 ## O painel
 
-- **Início**: apresentação do projeto e do autor (edite `docs/textos.js`) e contador em tempo real.
+- **Início**: apresentação do projeto (edite `docs/textos.js`) e contador em tempo real.
 - **Visão geral**: indicadores com variação contra o ano anterior, gasto por mês (com previsão), composição, cota por tipo de gasto, mapa por estado, partidos, distribuição e dispersão cota × gabinete.
 - **Deputados**: ranking ordenável e ficha completa (percentis, pontos de atenção, trajetória, fornecedores, emendas).
 - **Comparar**: até 6 deputados lado a lado.

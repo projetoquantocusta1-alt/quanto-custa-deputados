@@ -1579,6 +1579,8 @@
 
   // ============================================================ PRESENÇA
   const presencaDoAno = (ano) => cache("pres" + ano, () => getJSON(`dados/${ano}/presenca.json`));
+  // reuniões de comissão: a página do deputado (oficial) é mais completa que os dados abertos; usa a oficial quando existe
+  const comissoes = (p) => (p.oficial_comissoes && p.oficial_comissoes.presencas != null ? p.oficial_comissoes.presencas : p.reunioes_comissao || 0);
   const DIA_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
   const diaBR = (s) => { const [a, m, d] = s.split("-").map(Number); return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")} ${DIA_SEMANA[new Date(a, m - 1, d).getDay()]}`; };
   async function renderPresenca() {
@@ -1606,7 +1608,7 @@
     const q = semAcento($("#pr-busca").value.trim()), o = $("#pr-ord").value;
     const lista = deps.filter((x) => !q || semAcento(x.d.nome).includes(q));
     const ordem = { faltas: (a, b) => b.p.faltas - a.p.faltas || a.p.taxa - b.p.taxa, taxa: (a, b) => a.p.taxa - b.p.taxa || b.p.faltas - a.p.faltas,
-      presencas: (a, b) => b.p.presencas - a.p.presencas, comissoes: (a, b) => b.p.reunioes_comissao - a.p.reunioes_comissao,
+      presencas: (a, b) => b.p.presencas - a.p.presencas, comissoes: (a, b) => comissoes(b.p) - comissoes(a.p),
       pordia: (a, b) => (b.porDia ?? Infinity) - (a.porDia ?? Infinity) }[o];
     lista.sort(ordem);
     const lim = E.limPres || 25;
@@ -1614,8 +1616,8 @@
     $("#pr-tab").innerHTML = `<thead><tr><th>#</th><th>Deputado</th><th class="num">Dias de sessão</th><th class="num">Presenças</th><th class="num">Faltas</th><th class="num">Presença</th><th class="num">Reuniões de comissão</th><th class="num">Custo por dia de presença</th><th>Faltas (oficial)</th></tr></thead><tbody>` +
       lista.slice(0, lim).map((x, i) => `<tr><td class="num">${i + 1}º</td><td><button class="link-dep" data-dep="${x.d.id}">${esc(x.d.nome)}</button> <span class="sub">${esc(x.d.partido || "")}-${esc(x.d.uf || "")}</span></td>
         <td class="num">${nf(x.p.dias)}</td><td class="num">${nf(x.p.presencas)}</td><td class="num"><b>${nf(x.p.faltas)}</b></td>
-        <td class="num">${nf(x.p.taxa * 100, 1)}%<span class="barra-taxa"><i style="width:${x.p.taxa * 100}%"></i></span></td><td class="num">${nf(x.p.reunioes_comissao)}</td><td class="num">${x.porDia ? brl(x.porDia) : "—"}</td><td class="sub">${of(x.p.oficial)}</td></tr>`).join("") +
-      `</tbody><tfoot><tr><td></td><td>Total (${nf(lista.length)} deputados)</td><td class="num">${nf(soma(lista.map((x) => x.p.dias)))}</td><td class="num">${nf(soma(lista.map((x) => x.p.presencas)))}</td><td class="num">${nf(soma(lista.map((x) => x.p.faltas)))}</td><td></td><td class="num">${nf(soma(lista.map((x) => x.p.reunioes_comissao)))}</td><td class="num">${(() => { const pp = soma(lista.map((x) => x.p.presencas)); return pp ? brl(soma(lista.map((x) => x.d.custo_mandato * F)) / pp) : "—"; })()}</td><td></td></tr></tfoot>`;
+        <td class="num">${nf(x.p.taxa * 100, 1)}%<span class="barra-taxa"><i style="width:${x.p.taxa * 100}%"></i></span></td><td class="num" title="${x.p.oficial_comissoes ? `Página da Câmara: ${x.p.oficial_comissoes.presencas ?? "—"} presenças, ${x.p.oficial_comissoes.justificadas ?? "—"} ausências justificadas, ${x.p.oficial_comissoes.nao_justificadas ?? "—"} não justificadas` : "Contado nos dados abertos"}">${nf(comissoes(x.p))}</td><td class="num">${x.porDia ? brl(x.porDia) : "—"}</td><td class="sub">${of(x.p.oficial)}</td></tr>`).join("") +
+      `</tbody><tfoot><tr><td></td><td>Total (${nf(lista.length)} deputados)</td><td class="num">${nf(soma(lista.map((x) => x.p.dias)))}</td><td class="num">${nf(soma(lista.map((x) => x.p.presencas)))}</td><td class="num">${nf(soma(lista.map((x) => x.p.faltas)))}</td><td></td><td class="num">${nf(soma(lista.map((x) => comissoes(x.p))))}</td><td class="num">${(() => { const pp = soma(lista.map((x) => x.p.presencas)); return pp ? brl(soma(lista.map((x) => x.d.custo_mandato * F)) / pp) : "—"; })()}</td><td></td></tr></tfoot>`;
     $("#pr-mais").hidden = lista.length <= lim;
     grafico("g-pr-mes", { type: "bar", data: { labels: MESES, datasets: [{ label: "Dias com sessão deliberativa", data: P.dias_por_mes, backgroundColor: css("--accent") }] },
       options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { precision: 0 } } } } });
@@ -1696,7 +1698,7 @@
     else if (!x) h += `<p class="sub">Sem dados de presença para ${ano} ainda.</p>`;
     else {
       const url = P.url_evento || "";
-      h += `<p><b>${nf(x.presencas)}</b> presença(s) em <b>${nf(x.dias)}</b> dias com sessão deliberativa (${nf(x.taxa * 100, 1)}%) · <b style="color:var(--danger)">${nf(x.faltas)} falta(s)</b> · ${nf(x.reunioes_comissao)} reunião(ões) de comissão com presença.</p>`;
+      h += `<p><b>${nf(x.presencas)}</b> presença(s) em <b>${nf(x.dias)}</b> dias com sessão deliberativa (${nf(x.taxa * 100, 1)}%) · <b style="color:var(--danger)">${nf(x.faltas)} falta(s)</b> · ${nf(comissoes(x))} reunião(ões) de comissão com presença${x.oficial_comissoes ? ` (página da Câmara; ${nf(x.oficial_comissoes.nao_justificadas ?? 0)} ausência(s) não justificada(s) em comissões)` : ""}.</p>`;
       const dd = (E.resumo.deputados || []).find((z) => z.id === +id);
       if (dd && x.presencas) h += `<p><span class="selo-t t-es">Cálculo</span> Custo do mandato por dia de presença no Plenário: <b>${brl((dd.custo_mandato * fator()) / x.presencas)}</b> <span class="sub">(${brl(dd.custo_mandato * fator())} ÷ ${nf(x.presencas)} dias). O mandato também inclui trabalho em comissões, no gabinete e na base eleitoral.</span></p>`;
       if (x.oficial) h += `<p class="sub"><span class="selo-t t-of">Informação oficial</span> Página da Câmara: ${x.oficial.presencas ?? "—"} presenças, ${x.oficial.justificadas ?? "—"} ausências justificadas, ${x.oficial.nao_justificadas ?? "—"} não justificadas.</p>`;

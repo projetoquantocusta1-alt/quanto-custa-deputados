@@ -14,6 +14,7 @@ são guardados à parte, como "oficial".
 """
 import csv
 import io
+import re
 import unicodedata
 from collections import defaultdict
 from datetime import date
@@ -47,9 +48,18 @@ def eh_sessao_deliberativa(tipo: str) -> bool:
     return "sessao deliberativa" in t and "nao deliberativa" not in t
 
 
+VERSAO = 2   # 2: comissões nas salas "Anexo II, Plenário NN" + presença oficial em comissões
+
+_PLENARIO_PRINCIPAL = re.compile(r"^(plenario( principal| ulysses guimaraes)?|plen)$|plenario principal|plenario ulysses")
+
+
 def eh_reuniao_comissao(tipo: str, orgao: str) -> bool:
-    t, o = _norm(tipo), _norm(orgao)
-    return ("reuniao" in t or "audiencia" in t) and "plenario" not in o
+    """Reuniões e audiências fora do Plenário principal. As comissões se reúnem em salas chamadas
+    "Anexo II, Plenário 05" etc.: só o Plenário principal (sessões da Câmara) fica de fora."""
+    t, o = _norm(tipo), _norm(orgao).strip()
+    if "sessao" in t:
+        return False
+    return ("reuniao" in t or "audiencia" in t or "seminario" in t) and not _PLENARIO_PRINCIPAL.search(o)
 
 
 def cancelado(situacao: str) -> bool:
@@ -65,7 +75,7 @@ def em_recesso(d: date) -> bool:
 
 
 def calcular(eventos: list[dict], presencas: list[dict], meses_por_dep: dict[int, list[int]], ano: int,
-             oficiais: dict[int, dict] | None = None) -> dict:
+             oficiais: dict[int, dict] | None = None, oficiais_comissoes: dict[int, dict] | None = None) -> dict:
     """Resumo do ano: dias de sessão, e por deputado presenças, faltas (com as datas) e comissões."""
     sess_dia = defaultdict(list)          # data -> [[id_evento, descrição]]
     ev_dia, ev_comissao = {}, set()
@@ -75,7 +85,7 @@ def calcular(eventos: list[dict], presencas: list[dict], meses_por_dep: dict[int
         if not eid or not ini.startswith(str(ano)) or cancelado(_g(e, "situacao")):
             continue
         tipo = _g(e, "descricaoTipo", "tipo")
-        orgao = _g(e, "orgaos.sigla", "localCamara.nome", "orgaos_sigla", "siglaOrgao")
+        orgao = _g(e, "orgaos.sigla", "orgaos_sigla", "siglaOrgao", "localCamara.nome")
         if eh_sessao_deliberativa(tipo):
             sess_dia[ini].append([int(eid) if eid.isdigit() else eid, _g(e, "descricao")[:140] or tipo])
             ev_dia[eid] = ini
@@ -110,12 +120,14 @@ def calcular(eventos: list[dict], presencas: list[dict], meses_por_dep: dict[int
             "reunioes_comissao": com.get(dep_id, 0),
             "meses": sorted(ms),
             "oficial": (oficiais or {}).get(dep_id),
+            # presença em comissões segundo a página do deputado (mais completa que os dados abertos)
+            "oficial_comissoes": (oficiais_comissoes or {}).get(dep_id),
         }
     por_mes = defaultdict(int)
     for d in dias:
         por_mes[int(d[5:7])] += 1
     return {
-        "ano": ano, "dias_sessao": dias, "sessoes": {d: sess_dia[d] for d in dias},
+        "ano": ano, "versao": VERSAO, "dias_sessao": dias, "sessoes": {d: sess_dia[d] for d in dias},
         "dias_por_mes": [por_mes.get(m, 0) for m in range(1, 13)],
         "recessos": [[f"{ano}-{m1:02d}-{d1:02d}", f"{ano}-{m2:02d}-{d2:02d}"] for (m1, d1), (m2, d2) in config.RECESSOS],
         "reunioes_comissao_total": len(ev_comissao),

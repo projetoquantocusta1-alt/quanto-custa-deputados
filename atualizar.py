@@ -398,6 +398,47 @@ def montar_total(ipca_info: dict):
 
 
 
+# ------------------------------------------------------- presença (recálculo leve)
+def refazer_presencas_antigas(hoje: date, status: dict, max_anos: int = 3) -> None:
+    """Refaz presenca.json de anos já publicados com versão antiga, sem reprocessar o ano inteiro.
+    Usa os meses de mandato já guardados no próprio presenca.json e a presença oficial dos perfis."""
+    feitos = 0
+    for ano in sorted(anos_com_dados(), reverse=True):
+        if ano >= hoje.year or feitos >= max_anos:
+            continue
+        antigo = ler(SAIDA / str(ano) / "presenca.json")
+        if not antigo or antigo.get("indisponivel") or (antigo.get("versao") or 1) >= presenca.VERSAO:
+            continue
+        feitos += 1
+        perfis = ler(BRUTOS / f"perfis_{ano}.json", {}) or {}
+
+        def ofi(bloco):
+            out = {}
+            for k, v in perfis.items():
+                b = ((v or {}).get("presenca") or {}).get(bloco)
+                if b and str(k).isdigit():
+                    out[int(k)] = b
+            return out
+        meses_dep = {int(k): v.get("meses") or [] for k, v in (antigo.get("deputados") or {}).items()}
+        try:
+            log.info("presença de %s (recálculo, versão %s)...", ano, presenca.VERSAO)
+            ev = presenca.ler_csv(http.get(config.EVENTOS_CSV.format(ano=ano), timeout=300).content)
+            pr = presenca.ler_csv(http.get(config.PRESENCA_CSV.format(ano=ano), timeout=600).content)
+            pres = presenca.calcular(ev, pr, meses_dep, ano, ofi("plenario"), ofi("comissoes"))
+            if not pres["dias_sessao"]:
+                raise ValueError("sem sessões no arquivo")
+            status[f"presenca_{ano}"] = f"refeita ({len(pres['dias_sessao'])} dias de sessão)"
+        except Exception as e:  # noqa: BLE001
+            # sem os arquivos de hoje: mantém o cálculo antigo e acrescenta a presença oficial em comissões
+            log.warning("presença de %s: recálculo indisponível (%s); só a presença oficial em comissões", ano, e)
+            com = ofi("comissoes")
+            pres = dict(antigo)
+            pres["deputados"] = {k: {**v, "oficial_comissoes": com.get(int(k))} for k, v in (antigo.get("deputados") or {}).items()}
+            pres["versao"] = presenca.VERSAO
+            status[f"presenca_{ano}"] = f"oficial em comissões acrescentada ({e})"
+        gravar(SAIDA / str(ano) / "presenca.json", pres)
+
+
 # ---------------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser()
@@ -527,7 +568,9 @@ def main(argv=None):
             pr = presenca.ler_csv(http.get(config.PRESENCA_CSV.format(ano=ano), timeout=600).content)
             meses_dep = {l["id"]: custos.meses_de_mandato(perfis.get(l["id"]), ceap.get(l["id"]), md) for l in linhas}
             ofic = {l["id"]: ((perfis.get(l["id"]) or {}).get("presenca") or {}).get("plenario") for l in linhas}
-            pres = presenca.calcular(ev, pr, meses_dep, ano, {k: v for k, v in ofic.items() if v})
+            ofic_c = {l["id"]: ((perfis.get(l["id"]) or {}).get("presenca") or {}).get("comissoes") for l in linhas}
+            pres = presenca.calcular(ev, pr, meses_dep, ano, {k: v for k, v in ofic.items() if v},
+                                     {k: v for k, v in ofic_c.items() if v})
             if pres["dias_sessao"]:
                 gravar(SAIDA / str(ano) / "presenca.json", pres)
                 for l in linhas:
@@ -601,6 +644,13 @@ def main(argv=None):
                 status[f"novas_{ano}"] = f"erro: {e}"
         if not args.sem_fotos:
             baixar_fotos([l["id"] for l in linhas])
+
+    # 4b) presença de anos antigos gerada por versão anterior (alguns anos por dia, junto com o ano corrente)
+    if hoje.year in anos and not args.limite:
+        try:
+            refazer_presencas_antigas(hoje, status)
+        except Exception as e:  # noqa: BLE001
+            log.error("recálculo de presença falhou: %s", e)
 
     # 5) Séries históricas e metadados
     montar_historicos(ipca_info)

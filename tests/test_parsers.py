@@ -471,3 +471,19 @@ def test_presenca_oficial_da_pagina():
     t = "Presença em Plenário 2025 Presenças 58 dias Ausências justificadas 3 dias Ausências não justificadas 1 dia"
     assert _bloco_presenca(t) == {"presencas": 58, "justificadas": 3, "nao_justificadas": 1}
     assert _bloco_presenca("") is None
+
+
+def test_comissao_em_sala_chamada_plenario():
+    from coletor import presenca
+    assert presenca.eh_reuniao_comissao("Reunião Deliberativa", "Anexo II, Plenário 05")
+    assert presenca.eh_reuniao_comissao("Audiência Pública", "Anexo II, Plenário 12")
+    assert not presenca.eh_reuniao_comissao("Reunião Deliberativa", "Plenário Principal")
+    assert not presenca.eh_reuniao_comissao("Sessão Deliberativa", "Anexo II, Plenário 05")
+    eventos = [{"id": "9", "dataHoraInicio": "2025-03-05T10:00", "situacao": "Encerrada", "descricaoTipo": "Reunião Deliberativa",
+                "localCamara.nome": "Anexo II, Plenário 01"},
+               {"id": "1", "dataHoraInicio": "2025-03-04T14:00", "situacao": "Encerrada", "descricaoTipo": "Sessão Deliberativa",
+                "localCamara.nome": "Plenário Principal"}]
+    r = presenca.calcular(eventos, [{"idEvento": "9", "idDeputado": "10"}], {10: [3]}, 2025, None,
+                          {10: {"presencas": 40, "justificadas": 2, "nao_justificadas": 3}})
+    assert r["reunioes_comissao_total"] == 1 and r["deputados"]["10"]["reunioes_comissao"] == 1
+    assert r["deputados"]["10"]["oficial_comissoes"]["presencas"] == 40 and r["versao"] == presenca.VERSAO
