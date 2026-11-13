@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 import config
 from coletor import http
+from coletor.privacidade import mascarar_cpf_no_texto
 
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
          "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
@@ -177,7 +178,7 @@ def ler_ceap_csv(conteudo: bytes) -> pd.DataFrame:
         "categoria": df["txtDescricao"].fillna("OUTROS").map(categoria_curta),
         "data": pd.to_datetime(df["datEmissao"].str.slice(0, 10), errors="coerce")
                 if "datEmissao" in df.columns else pd.NaT,
-        "fornecedor": df["txtFornecedor"].fillna("").str.strip(),
+        "fornecedor": df["txtFornecedor"].fillna("").str.strip().map(mascarar_cpf_no_texto),
         "cnpj_cpf": df["txtCNPJCPF"].fillna("").str.strip(),
         "valor": df["vlrLiquido"].map(br_para_float),
         "glosa": df["vlrGlosa"].map(br_para_float) if "vlrGlosa" in df.columns else 0.0,
@@ -214,6 +215,12 @@ def baixar_ceap(ano: int) -> pd.DataFrame:
     return ler_ceap_csv(z.read(nome))
 
 
+def doc_publico(c: str) -> str:
+    """CNPJ como veio; CPF (11 dígitos, em qualquer formato) mascarado."""
+    d = re.sub(r"\D", "", c or "")
+    return f"***.{d[3:6]}.{d[6:9]}-**" if len(d) == 11 else mascarar_cpf_no_texto(c)
+
+
 def resumir_ceap(df: pd.DataFrame) -> dict[int, dict]:
     """Por deputado: total, por mês, por categoria, top fornecedores."""
     res = {}
@@ -227,7 +234,7 @@ def resumir_ceap(df: pd.DataFrame) -> dict[int, dict]:
             "por_mes": {int(m): round(float(v), 2) for m, v in por_mes.items()},
             "por_categoria": {c: round(float(v), 2) for c, v in por_cat.items()},
             "top_fornecedores": [
-                {"nome": f, "cnpj_cpf": c, "valor": round(float(v), 2)}
+                {"nome": f, "cnpj_cpf": doc_publico(c), "valor": round(float(v), 2)}
                 for (f, c), v in forn.items()
             ],
         }

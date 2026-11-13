@@ -487,3 +487,13 @@ def test_comissao_em_sala_chamada_plenario():
                           {10: {"presencas": 40, "justificadas": 2, "nao_justificadas": 3}})
     assert r["reunioes_comissao_total"] == 1 and r["deputados"]["10"]["reunioes_comissao"] == 1
     assert r["deputados"]["10"]["oficial_comissoes"]["presencas"] == 40 and r["versao"] == presenca.VERSAO
+
+
+def test_cpf_mascarado():
+    from coletor.privacidade import mascarar_cpf_no_texto as m
+    from coletor.camara import doc_publico
+    assert m("FULANO DE TAL 96106697272") == "FULANO DE TAL ***.066.972-**"
+    assert m("013.558.585-69") == "***.558.585-**" and m("123.456.789/01  -") == "***.456.789-**"
+    assert m("00000017295") == "00000017295" and m("EMPRESA LTDA 2000004245") == "EMPRESA LTDA 2000004245"
+    assert m("12.345.678/0001-90") == "12.345.678/0001-90"
+    assert doc_publico("187.643.110/19  -") == "***.643.110-**" and doc_publico("12.345.678/0001-90") == "12.345.678/0001-90"

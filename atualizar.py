@@ -53,6 +53,7 @@ def anos_pendentes(hoje: date) -> list[int]:
     # anos já publicados mas ainda sem os fornecedores por partido/estado também entram na fila
     faltam = [a for a in range(config.ANO_INICIAL, hoje.year + 1)
               if a not in feitos or not (SAIDA / str(a) / "forn_grupos").is_dir()
+              or (ler(SAIDA / str(a) / "fornecedores.json", {}) or {}).get("versao_linhas") != notas.VERSAO_LINHAS
               or (a >= config.PRESENCA_DESDE and not (SAIDA / str(a) / "presenca.json").exists())]
     # o ano corrente sempre entra; de janeiro a março, também o anterior
     # (notas de dezembro continuam chegando); os atrasados, do mais recente ao mais antigo
@@ -597,7 +598,7 @@ def main(argv=None):
         if ceap_df is not None:
             arq_f = SAIDA / str(ano) / "fornecedores.json"
             atual_f = ler(arq_f, {}) or {}
-            ja_tem = atual_f.get("formato") == 2 and atual_f.get("versao_linhas") == 2
+            ja_tem = atual_f.get("formato") == 2 and atual_f.get("versao_linhas") == notas.VERSAO_LINHAS
             sem_grupos = not (SAIDA / str(ano) / "forn_grupos").is_dir()
             if not ja_tem or sem_grupos or args.notas or hoje.weekday() == config.DIA_DA_SEMANA_NOTAS:
                 log.info("  notas e fornecedores de %s...", ano)

@@ -14,6 +14,7 @@ CPF de pessoa física aparece mascarado; a chave interna é um código derivado.
 """
 import hashlib
 import re
+import unicodedata
 
 import pandas as pd
 
@@ -24,14 +25,25 @@ def _dig(s) -> str:
     return re.sub(r"\D", "", str(s or ""))
 
 
+VERSAO_LINHAS = 3   # 3: chave de pessoa física sem o CPF inteiro
+
+
+def chave_pf(meio6: str, nome: str) -> str:
+    """Chave de pessoa física a partir dos 6 dígitos do meio do CPF (já públicos) e do nome."""
+    n = unicodedata.normalize("NFKD", str(nome or "")).encode("ascii", "ignore").decode().upper()
+    n = re.sub(r"[^A-Z0-9]+", " ", n).strip()
+    return "pf" + hashlib.sha1(f"{meio6}|{n}".encode()).hexdigest()[:12]
+
+
 def chave_e_doc(doc_bruto: str, nome: str) -> tuple[str, str, str]:
     """(chave interna, documento para exibir, tipo PJ/PF/—)."""
     d = _dig(doc_bruto)
     if len(d) == 14:
         return d, f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}", "PJ"
     if len(d) == 11:
-        h = hashlib.sha1(d.encode()).hexdigest()[:12]
-        return "pf" + h, f"***.{d[3:6]}.{d[6:9]}-**", "PF"
+        # a chave NÃO usa o CPF inteiro (um resumo do CPF pode ser revertido testando ~1.000
+        # combinações, já que os 6 dígitos do meio são públicos): usa só o que já é público.
+        return chave_pf(d[3:9], nome), f"***.{d[3:6]}.{d[6:9]}-**", "PF"
     base = re.sub(r"[^a-z0-9]+", "-", str(nome).lower()).strip("-")[:24] or "sem-nome"
     return "sd-" + base, "", "—"
 
@@ -171,7 +183,7 @@ def fornecedores(d: pd.DataFrame, info: dict[int, dict], ano: int, com_fichas: b
                               r.chave, r.fornecedor, r.categoria, _url_curta(r.url)])
 
     resumo = {
-        "ano": ano, "formato": 2, "versao_linhas": 2, "total": round(total, 2), "qtd": n, "notas": int(len(d)),
+        "ano": ano, "formato": 2, "versao_linhas": VERSAO_LINHAS, "total": round(total, 2), "qtd": n, "notas": int(len(d)),
         "ticket_medio": round(total / max(len(d), 1), 2),
         "top10_participacao": round(float(base["valor"].head(10).sum()) / total, 4),
         "hhi": hhi, "pareto": pareto,
