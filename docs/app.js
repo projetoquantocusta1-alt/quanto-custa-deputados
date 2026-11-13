@@ -2044,7 +2044,7 @@
       .filter((x) => x[1]).map(([r, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${r}</a>`).join(" · ");
     E.resumoAtual = await cache("r" + anos[0], () => getJSON(`dados/${anos[0]}/resumo.json`));
     const anoUrl = p.get("ano") === "total" && E.meta.total ? "total" : +p.get("ano");
-    E.pag = ["inicio", "geral", "deputados", "novas", "comparar", "fornecedores", "atencao", "rankings", "previsoes", "historico", "metodo"].includes(p.get("pag")) ? p.get("pag") : "inicio";
+    E.pag = ["inicio", "geral", "deputados", "presenca", "projetos", "novas", "comparar", "fornecedores", "atencao", "rankings", "previsoes", "dava", "historico", "metodo"].includes(p.get("pag")) ? p.get("pag") : "inicio";
     await irAno(anoUrl === "total" || anos.includes(anoUrl) ? anoUrl : anos[0]);
     ["uf", "partido"].forEach((k) => { if (p.get(k)) $("#f-" + k).value = p.get(k); });
     irPara(E.pag);
