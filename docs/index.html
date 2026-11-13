@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projeto Quanto Custa — Deputados federais</title>
+<meta name="description" content="Painel aberto com o custo de cada deputado federal desde 2009: salário, auxílios, cota parlamentar, verba de gabinete, fornecedores, pontos de atenção e previsões — dados oficiais atualizados todo dia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="tema.css?v=13">
+</head>
+<body>
+
+<!-- ====================== MENU LATERAL ====================== -->
+<aside class="menu" id="menu" aria-label="Menu">
+  <div class="marca">
+    <span class="logo" aria-hidden="true">R$</span>
+    <div><strong>Projeto Quanto Custa</strong><small class="marca-sub">Deputados federais</small></div>
+  </div>
+  <nav>
+    <button data-pag="inicio"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Início</button>
+    <button data-pag="geral"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Visão geral</button>
+    <button data-pag="deputados"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>Deputados</button>
+    <div class="grupo"><span class="grupo-rot" tabindex="0">Atuação</span><div class="grupo-itens">
+      <button data-pag="presenca"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2 2 4-4"/></svg>Presença e faltas</button>
+      <button data-pag="projetos"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 14l2 2 4-4"/></svg>Projetos aprovados</button>
+    </div></div>
+    <div class="grupo"><span class="grupo-rot" tabindex="0">Investigar gastos</span><div class="grupo-itens">
+      <button data-pag="novas"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5"/></svg>Novas notas de hoje <span class="contador novo" id="n-novas" hidden></span></button>
+      <button data-pag="fornecedores"><svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg>Fornecedores</button>
+      <button data-pag="atencao"><svg viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18h.01"/></svg>Pontos de atenção</button>
+    </div></div>
+    <button data-pag="comparar"><svg viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M3 8h5M16 16h5"/></svg>Comparar <span class="contador" id="n-comp" hidden></span></button>
+    <div class="grupo"><span class="grupo-rot" tabindex="0">Análises</span><div class="grupo-itens">
+      <button data-pag="rankings"><svg viewBox="0 0 24 24"><path d="M6 20V12M12 20V6M18 20v-9"/><circle cx="12" cy="4" r="1.5"/></svg>Rankings e mapa</button>
+      <button data-pag="previsoes"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Previsões</button>
+      <button data-pag="dava"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>O que dava pra fazer?</button>
+    </div></div>
+    <button data-pag="historico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Histórico</button>
+    <button data-pag="metodo"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM9 10h6M9 14h6"/></svg>Metodologia</button>
+  </nav>
+  <p class="menu-rodape" id="atualizado"></p>
+</aside>
+
+<div class="conteudo">
+  <header class="topo-movel">
+    <button class="hamburguer" id="abrir-menu" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <strong>Projeto Quanto Custa</strong>
+  </header>
+
+  <!-- ====================== FILTROS ====================== -->
+  <section class="segmentacoes" id="segmentacoes" aria-label="Filtros">
+    <label class="f-ano">Ano<select id="f-ano"></select></label>
+    <label>Estado<select id="f-uf"><option value="">Todos</option></select></label>
+    <label>Partido<select id="f-partido"><option value="">Todos</option></select></label>
+    <div class="busca combo" id="combo-dep">
+      <label for="f-busca">Deputado(s)</label>
+      <div class="combo-campo" id="combo-campo">
+        <span class="combo-chips" id="combo-chips"></span>
+        <input id="f-busca" type="text" autocomplete="off" spellcheck="false" placeholder="Toque para ver a lista" role="combobox" aria-expanded="false" aria-controls="combo-lista" aria-autocomplete="list">
+        <button type="button" class="combo-seta" id="combo-seta" aria-label="Mostrar a lista de deputados" tabindex="-1">▾</button>
+      </div>
+      <div class="combo-painel" id="combo-painel" hidden>
+        <p class="combo-info" id="combo-info"></p>
+        <ul class="combo-lista" id="combo-lista" role="listbox" aria-multiselectable="true"></ul>
+      </div>
+    </div>
+    <label class="chave f-ipca"><input id="f-ipca" type="checkbox" checked><span>Valores de hoje<small id="ipca-ref">corrigidos pelo IPCA</small></span></label><span class="termo termo-icone f-ipca" tabindex="0" data-t="valores_hoje" aria-label="O que são valores de hoje?">?</span>
+    <button class="btn-sec" id="limpar" type="button">Limpar filtros</button>
+  </section>
+  <p class="aviso" id="aviso" hidden></p>
+
+  <main>
+    <!-- ====================== INÍCIO ====================== -->
+    <section class="pagina" data-pag="inicio">
+      <!-- destaque: total desde 2009 -->
+      <div class="destaque">
+        <p class="selo">Transparência independente · dados oficiais · atualizados todos os dias</p>
+        <h1 id="i-titulo"></h1>
+        <p class="hero-sub" id="i-sub"></p>
+        <form class="busca-grande" id="i-busca-form" role="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input id="i-busca" type="search" list="i-busca-lista" placeholder="Pesquise um deputado pelo nome..." autocomplete="off" aria-label="Pesquisar deputado">
+          <datalist id="i-busca-lista"></datalist>
+          <button type="submit">Buscar</button>
+        </form>
+        <p class="destaque-rot" id="d-rot">Todos os deputados federais já custaram, desde 2009,</p>
+        <div class="destaque-valor" id="imp-total">—</div>
+        <p class="destaque-nota">em valores de hoje, <b>corrigidos pela inflação (<span class="termo" tabindex="0" data-t="ipca">IPCA</span>)</b> · salário, ajudas, auxílio-moradia, <span class="termo" tabindex="0" data-t="ceap">cota parlamentar</span> e <span class="termo" tabindex="0" data-t="gabinete">verba de gabinete</span></p>
+        <div class="contador-linha" aria-live="off">
+          <div><span id="imp-rot">Só neste ano</span><b id="imp-valor">R$ 0,00</b></div>
+          <div><span>por segundo</span><b id="imp-seg">—</b></div>
+          <div><span>por dia</span><b id="imp-dia">—</b></div>
+          <div><span>previsão para o ano</span><b id="imp-prev">—</b></div>
+        </div>
+        <p class="imp-nota">O valor do ano avança em tempo real, no ritmo de gastos registrado (estimativa). De 2009 a 2012 a Câmara não publica a verba de gabinete de cada deputado: esses anos entram sem ela, e o total é um piso.</p>
+      </div>
+
+      <div class="kpis" id="i-kpis"></div>
+
+      <!-- seu estado -->
+      <div class="grade">
+        <article class="visual span-7 seu-estado">
+          <header><h2>Veja os deputados do seu estado</h2></header>
+          <div class="estado-escolha">
+            <label>Seu estado<select id="i-uf"><option value="">Escolha…</option></select></label>
+            <button class="btn" id="i-uf-ir" type="button" disabled>Ver deputados</button>
+          </div>
+          <div class="mapa-br" id="i-mapa" role="group" aria-label="Mapa do Brasil: escolha seu estado"></div>
+          <p class="dica">Toque no seu estado. O site lembra a escolha na próxima visita.</p>
+        </article>
+        <article class="visual span-5" id="i-uf-resumo">
+          <header><h2 id="i-uf-tit">Seu estado em números</h2></header>
+          <div id="i-uf-corpo" class="sub">Escolha um estado para ver o resumo.</div>
+        </article>
+      </div>
+
+      <h2 class="titulo-secao">O que você encontra aqui</h2>
+      <div class="atalhos">
+        <button data-ir="geral"><b>Visão geral</b><span>Quanto custa a Câmara, mês a mês, por partido e por estado.</span></button>
+        <button data-ir="deputados"><b>Deputados</b><span>O custo de cada um, com ficha completa e imagem para compartilhar.</span></button>
+        <button data-ir="novas"><b>Novas notas de hoje</b><span>As despesas que a Câmara publicou nos últimos dias, uma a uma.</span></button>
+        <button data-ir="comparar"><b>Comparar</b><span>Até 6 deputados lado a lado.</span></button>
+        <button data-ir="fornecedores"><b>Fornecedores</b><span>Quais empresas mais recebem dinheiro da cota, com cada nota fiscal.</span></button>
+        <button data-ir="atencao"><b>Pontos de atenção</b><span>Padrões estatísticos que merecem um olhar mais de perto.</span></button>
+        <button data-ir="previsoes"><b>Previsões</b><span>Quanto cada um ainda deve gastar até o fim do ano.</span></button>
+      </div>
+
+      <div class="grade">
+        <article class="visual span-12 texto"><h2>Sobre o projeto</h2><div id="i-projeto"></div><div id="i-compromissos"></div><p><button class="btn-sec" id="bv-abrir" type="button">Ver a mensagem de boas-vindas</button></p></article>
+      </div>
+    </section>
+
+    <!-- ====================== VISÃO GERAL ====================== -->
+    <section class="pagina" data-pag="geral">
+      <div class="barra-acoes"><button class="btn-sec btn-card" data-card-ranking type="button">Gerar imagem com os 10 mais caros</button></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grade">
+        <article class="visual span-8"><header><h2>Gasto por mês</h2><span class="dica" id="dica-mes">tracejado: previsão</span></header>
+          <div class="canvas-box alto"><canvas id="g-mes"></canvas></div></article>
+        <article class="visual span-4"><header><h2>Para onde vai o dinheiro</h2></header>
+          <div class="canvas-box alto"><canvas id="g-comp"></canvas></div></article>
+        <article class="visual span-6"><header><h2><span class="termo" tabindex="0" data-t="ceap">Cota parlamentar</span> por tipo de gasto</h2></header>
+          <div class="canvas-box muito-alto"><canvas id="g-cat"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Custo médio por deputado, por estado</h2><span class="dica">clique para filtrar</span></header>
+          <div class="mapa" id="mapa-geral"></div><div class="mapa-legenda" id="mapa-geral-leg"></div></article>
+        <article class="visual span-6"><header><h2>Por partido</h2>
+          <select id="partido-metrica" class="mini"><option value="media">Média por deputado</option><option value="total">Total</option></select></header>
+          <div class="canvas-box muito-alto"><canvas id="g-partido"></canvas></div><p class="dica">Clique numa barra para filtrar.</p></article>
+        <article class="visual span-6"><header><h2>Como os custos se distribuem</h2><span class="dica">nº de deputados por faixa de custo mensal</span></header>
+          <div class="canvas-box"><canvas id="g-hist-dist"></canvas></div>
+          <header style="margin-top:14px"><h2>Cota × verba de gabinete</h2><span class="dica">cada ponto é um deputado · clique para abrir</span></header>
+          <div class="canvas-box"><canvas id="g-disp"></canvas></div></article>
+      </div>
+    </section>
+
+    <!-- ====================== DEPUTADOS ====================== -->
+    <section class="pagina" data-pag="deputados">
+      <div class="kpis" id="dep-kpis"></div>
+      <article class="visual"><header><h2>Ranking dos deputados</h2><button class="btn-sec btn-card" data-card-ranking type="button">Gerar imagem do ranking</button><span class="dica">Marque até 6 para comparar · clique no nome para ver a ficha · clique no título da coluna para ordenar</span></header>
+        <div class="tabela-rolagem"><table class="ranking" id="ranking"></table></div>
+        <button class="btn-sec mais" id="mais" type="button" hidden>Mostrar mais</button></article>
+    </section>
+
+    <!-- ====================== NOVAS NOTAS ====================== -->
+    <section class="pagina" data-pag="novas">
+      <div class="nv-topo">
+        <div class="nv-dias" id="nv-dias" role="group" aria-label="Escolha o dia"></div>
+        <p class="sub" id="nv-sub"></p>
+      </div>
+      <p class="aviso aviso-fixo" id="nv-aviso" hidden></p>
+      <div id="nv-conteudo">
+        <p class="filtro-ativo" id="nv-filtro" hidden></p>
+        <div class="kpis" id="nv-kpis"></div>
+        <div class="grade">
+          <article class="visual span-12 nv-impacto"><header><h2>Impacto no ano</h2><span class="dica" id="nv-impacto-dica"></span></header>
+            <div id="nv-impacto"></div></article>
+          <article class="visual span-6"><header><h2>Por tipo de gasto</h2><span class="dica">valor das notas novas · no balão, quanto isso aumentou o tipo no ano</span></header>
+            <div class="canvas-box alto"><canvas id="g-nv-cat"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Deputados com mais gastos novos</h2><span class="dica">clique para abrir a ficha</span></header>
+            <div class="canvas-box alto"><canvas id="g-nv-dep"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Quem mais subiu no ranking da cota</h2><span class="dica">posição no gasto da cota no ano, antes e depois das notas novas</span></header>
+            <ol class="nv-subiu" id="nv-subiu"></ol></article>
+          <article class="visual span-6"><header><h2>Fornecedores que mais receberam</h2><span class="dica">clique para abrir a ficha</span></header>
+            <div class="canvas-box alto"><canvas id="g-nv-forn"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Por estado</h2><span class="dica">valor das notas novas · clique para filtrar</span></header>
+            <div class="mapa" id="mapa-nv"></div><div class="mapa-legenda" id="mapa-nv-leg"></div></article>
+          <article class="visual span-6"><header><h2>Por partido</h2><span class="dica">clique para filtrar</span></header>
+            <div class="canvas-box alto"><canvas id="g-nv-partido"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Quanto tempo depois da compra</h2><span class="dica">dias entre a emissão da nota e a publicação pela Câmara</span></header>
+            <div class="canvas-box"><canvas id="g-nv-atraso"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Dia da semana da emissão</h2></header>
+            <div class="canvas-box"><canvas id="g-nv-semana"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Tamanho das notas</h2><span class="dica">nº de notas novas por faixa de valor</span></header>
+            <div class="canvas-box"><canvas id="g-nv-hist"></canvas></div></article>
+          <article class="visual span-6"><header><h2>Estatísticas do lote</h2><span class="dica">comparadas com todas as notas do ano</span></header>
+            <div class="tabela-rolagem"><table class="comp-tab" id="nv-estat"></table></div></article>
+          <article class="visual span-12"><header><h2>Destaques</h2><span class="dica">padrões automáticos, não acusação · clique para filtrar a lista</span></header>
+            <div class="tipos" id="nv-marcas"></div></article>
+          <article class="visual span-12"><header><h2>Todas as notas novas</h2><span class="dica" id="nv-contagem"></span></header>
+            <div class="filtros-tabela">
+              <input id="nv-busca" type="search" placeholder="Buscar deputado, fornecedor ou CNPJ">
+              <select id="nv-cat"><option value="">Todos os tipos de gasto</option></select>
+              <select id="nv-ord"><option value="valor">Maior valor</option><option value="emissao">Emissão mais recente</option><option value="emissao-">Emissão mais antiga</option><option value="dep">Deputado (A–Z)</option><option value="vezes">Mais acima do normal do tipo</option></select>
+            </div>
+            <div class="tabela-rolagem"><table class="ranking" id="nv-tab"></table></div>
+            <button class="btn-sec mais" id="nv-mais" type="button" hidden>Mostrar mais</button></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== COMPARAR ====================== -->
+    <section class="pagina" data-pag="comparar">
+      <div class="comp-topo">
+        <div class="chips" id="chips"></div>
+        <label class="busca">Adicionar deputado<input id="comp-busca" list="lista-deps" placeholder="Digite um nome"></label>
+        <datalist id="lista-deps"></datalist>
+      </div>
+      <div id="comp-vazio" class="vazio">Escolha de 2 a 6 deputados: marque na página Deputados ou digite o nome acima.</div>
+      <div class="grade" id="comp-conteudo" hidden>
+        <article class="visual span-12"><header><h2>Lado a lado</h2><span class="dica">em vermelho, o maior valor de cada linha</span></header>
+          <div class="tabela-rolagem"><table class="comp-tab" id="comp-tab"></table></div></article>
+        <article class="visual span-7"><header><h2>Gasto por mês (cota + gabinete)</h2></header><div class="canvas-box alto"><canvas id="g-comp-mes"></canvas></div></article>
+        <article class="visual span-5"><header><h2>Composição do custo</h2></header><div class="canvas-box alto"><canvas id="g-comp-comp"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Cota por tipo de gasto</h2></header><div class="canvas-box alto"><canvas id="g-comp-cat"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Trajetória desde 2009</h2><span class="dica">custo médio por mês em cada ano</span></header><div class="canvas-box alto"><canvas id="g-comp-traj"></canvas></div></article>
+      </div>
+    </section>
+
+    <!-- ====================== FORNECEDORES ====================== -->
+    <section class="pagina" data-pag="fornecedores">
+      <p class="aviso aviso-fixo" id="f-aviso" hidden></p>
+      <p class="filtro-ativo" id="f-filtro" hidden></p>
+      <p class="aviso aviso-fixo" id="f-sigepa" hidden>Desde agosto de 2025, as passagens aéreas compradas pelo sistema da Câmara (SIGEPA) não aparecem nota a nota no arquivo aberto. Elas entram no custo de cada deputado como <span class="termo" tabindex="0" data-t="sem_nota">"sem nota no arquivo aberto"</span>, mas não podem ser listadas por fornecedor aqui — por isso as companhias aéreas aparecem com menos do que de fato receberam.</p>
+      <div class="kpis" id="f-kpis"></div>
+      <div class="grade">
+        <article class="visual span-12 rf-painel" id="f-rf" hidden><header><h2>Cruzamento com a Receita Federal</h2><span class="dica" id="f-rf-sub"></span></header>
+          <p class="sub" style="margin-top:0">Situação cadastral, abertura, sócios e endereço de cada empresa, comparados com as notas da cota. São padrões automáticos para orientar a consulta, não acusação. Clique na empresa para ver a ficha completa.</p>
+          <div class="rf-chips" id="f-rf-tipos" role="group" aria-label="Tipos de inconsistência"></div>
+          <div class="filtros-tabela">
+            <select id="rf-tipo" aria-label="Tipo de inconsistência"><option value="">Todos os tipos de inconsistência</option></select>
+            <select id="rf-grav" aria-label="Gravidade"><option value="">Qualquer gravidade</option><option value="alta">Só as graves</option><option value="media">Graves e médias</option></select>
+            <input id="rf-busca" type="search" placeholder="Empresa, razão social ou CNPJ">
+          </div>
+          <h3 class="d-sec" id="rf-tit"></h3>
+          <div class="rf-tabela" id="f-rf-lista"></div>
+          <button class="btn-sec mais" id="f-rf-mais" type="button" hidden>Mostrar mais 10</button>
+        </article>
+        <article class="visual span-12 rf-painel" id="f-rf-deps-box" hidden><header><h2>Deputados no quadro de empresas</h2><span class="dica" id="rf-dep-sub"></span></header>
+          <div class="filtros-tabela">
+            <select id="rf-dep-tipo" aria-label="Quais deputados"><option value="pagou">Pagaram, com a cota, empresa de que são sócios</option><option value="recebeu">A empresa recebeu da cota</option><option value="">Todos os vínculos</option></select>
+            <input id="rf-dep-busca" type="search" placeholder="Deputado, empresa ou CNPJ">
+          </div>
+          <h3 class="d-sec" id="rf-dep-tit"></h3>
+          <div class="rf-tabela" id="f-rf-deps"></div>
+          <button class="btn-sec mais" id="f-rf-deps-mais" type="button" hidden>Mostrar mais 10</button>
+          <p class="sub">Encontrados pelo nome completo e pelos 6 dígitos do CPF que a Receita mostra. "Conferir" = nome parecido, não idêntico. Ser sócio não é irregular; usar a cota com empresa de que o parlamentar é sócio é proibido (Ato da Mesa 43/2009). Diretor ou conselheiro não é dono. A Receita mostra o quadro atual, com a data de entrada.</p>
+        </article>
+        <article class="visual span-6"><header><h2>Como o dinheiro se concentra</h2><span class="dica">% do valor que fica com os maiores fornecedores</span></header>
+          <div class="canvas-box alto"><canvas id="g-forn-pareto"></canvas></div><p class="dica" id="f-pareto-txt"></p></article>
+        <article class="visual span-6"><header><h2>Por tipo de gasto</h2><span class="dica">valor pago · nº de fornecedores no balão</span></header>
+          <div class="canvas-box alto"><canvas id="g-forn-cat"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Quem mais recebeu</h2><span class="dica">clique para abrir a ficha</span></header>
+          <div class="canvas-box muito-alto"><canvas id="g-forn-valor"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Pagos pelo maior número de deputados</h2></header>
+          <div class="canvas-box muito-alto"><canvas id="g-forn-deps"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Empresas e pessoas físicas</h2></header>
+          <div class="canvas-box"><canvas id="g-forn-tipo"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Tamanho das notas</h2><span class="dica">nº de fornecedores por valor médio da nota</span></header>
+          <div class="canvas-box"><canvas id="g-forn-ticket"></canvas></div></article>
+        <article class="visual span-12"><header><h2>Maiores notas fiscais</h2><span class="dica">cada linha é uma despesa · "ver nota" abre o documento oficial na Câmara</span></header>
+          <div class="tabela-rolagem"><table class="ranking" id="f-notas"></table></div>
+          <button class="btn-sec mais" id="f-notas-mais" type="button" hidden>Mostrar mais</button></article>
+        <article class="visual span-12"><header><h2>Todos os fornecedores</h2><span class="dica" id="f-contagem"></span></header>
+          <div class="filtros-tabela">
+            <input id="forn-busca" type="search" placeholder="Buscar empresa, pessoa ou CNPJ">
+            <select id="forn-cat"><option value="">Todos os tipos de gasto</option></select>
+            <select id="forn-tipo"><option value="">Empresas e pessoas</option><option value="PJ">Só empresas (CNPJ)</option><option value="PF">Só pessoas físicas (CPF)</option></select>
+            <select id="forn-dep"><option value="">Qualquer nº de deputados</option><option value="1">Só 1 deputado</option><option value="5">5 ou mais deputados</option></select>
+          </div>
+          <div class="tabela-rolagem"><table class="ranking" id="forn-tab"></table></div>
+          <button class="btn-sec mais" id="forn-mais" type="button" hidden>Mostrar mais</button></article>
+      </div>
+    </section>
+
+    <!-- ====================== PONTOS DE ATENÇÃO ====================== -->
+    <section class="pagina" data-pag="atencao">
+      <p class="aviso aviso-fixo"><b>Importante:</b> pontos de atenção são padrões estatísticos calculados automaticamente. <b>Não são acusação nem prova de irregularidade</b> — muitos têm explicação legítima. Servem para orientar perguntas e a consulta às notas fiscais na página oficial da Câmara.</p>
+      <div class="selos-legenda" aria-label="Como ler as etiquetas">
+        <span class="selo-t t-of">Informação oficial</span><span class="selo-t t-es">Análise estatística</span>
+        <span class="selo-t t-at">Ponto de atenção</span><span class="selo-t t-in">Inconsistência a verificar</span>
+        <small>Cada etiqueta diz o que o dado é. Nenhuma delas é acusação.</small></div>
+      <div class="tipos" id="a-tipos"></div>
+      <div class="grade">
+        <article class="visual span-5"><header><h2>Por partido</h2><span class="dica">pontos por deputado</span></header><div class="canvas-box alto"><canvas id="g-at-partido"></canvas></div></article>
+        <article class="visual span-7"><header><h2>Deputados com mais pontos</h2></header><div class="canvas-box alto"><canvas id="g-at-top"></canvas></div></article>
+        <article class="visual span-12"><header><h2 id="a-titulo-lista">Lista</h2></header><ol class="cartoes" id="a-lista"></ol>
+          <button class="btn-sec mais" id="a-mais" type="button" hidden>Mostrar mais</button></article>
+      </div>
+    </section>
+
+    <!-- ====================== PRESENÇA ====================== -->
+    <section class="pagina" data-pag="presenca">
+      <div class="selos-legenda"><span class="selo-t t-of">Informação oficial</span><span class="selo-t t-es">Cálculo com dados abertos</span>
+        <small>Contamos os <b>dias com sessão deliberativa no Plenário</b> em que o deputado estava em exercício. Recesso parlamentar não é falta. A Câmara classifica as faltas em justificadas ou não; quando a página oficial do deputado mostra esses números, eles aparecem na coluna "oficial".</small></div>
+      <div id="pr-vazio" class="vazio" hidden></div>
+      <div id="pr-conteudo">
+        <div class="kpis" id="pr-kpis"></div>
+        <div class="grade">
+          <article class="visual span-8"><header><h2>Quem mais faltou</h2>
+            <span class="filtros-tabela"><input id="pr-busca" class="mini-busca" type="search" placeholder="Filtrar por nome">
+            <select id="pr-ord" class="mini"><option value="faltas">Mais faltas</option><option value="taxa">Menor presença (%)</option><option value="presencas">Mais presenças</option><option value="comissoes">Mais reuniões de comissão</option><option value="pordia">Maior custo por dia de presença</option></select></span>
+            <span class="dica">clique no nome para ver os dias de falta</span></header>
+            <div class="tabela-rolagem"><table class="ranking" id="pr-tab"></table></div>
+            <button class="btn-sec mais" id="pr-mais" type="button" hidden>Mostrar mais</button></article>
+          <article class="visual span-4"><header><h2>Dias de sessão por mês</h2><span class="dica" id="pr-dica"></span></header>
+            <div class="canvas-box alto"><canvas id="g-pr-mes"></canvas></div>
+            <p class="dica" id="pr-recesso"></p></article>
+          <article class="visual span-12"><header><h2>Presença média por partido</h2><span class="dica">% dos dias de sessão com presença</span></header>
+            <div class="canvas-box alto"><canvas id="g-pr-partido"></canvas></div></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== PROJETOS APROVADOS ====================== -->
+    <section class="pagina" data-pag="projetos">
+      <div class="selos-legenda"><span class="selo-t t-of">Informação oficial</span><span class="selo-t t-es">Análise: relevância para a população</span>
+        <small>Projetos aprovados na Câmara (viraram lei, foram enviados ao Senado ou promulgados). A relevância é uma nota de 0 a 100 pelo tipo, tema e assunto: mudanças que afetam muita gente valem mais do que homenagens, nomes de datas e concessões de rádio.</small></div>
+      <div class="kpis" id="pj-kpis"></div>
+      <div class="grade">
+        <article class="visual span-12"><header><h2>Custo × projetos aprovados</h2>
+          <span class="filtros-tabela"><input id="pj-busca-dep" class="mini-busca" type="search" placeholder="Filtrar por nome">
+          <select id="pj-ord" class="mini"><option value="relev">Mais projetos relevantes</option><option value="aprov">Mais aprovados</option><option value="custo_rel">Maior custo por projeto relevante</option><option value="custo">Mais caros</option></select></span>
+          <span class="dica" id="pj-comp-dica">conta todos os projetos em que o deputado é autor ou coautor</span></header>
+          <div class="tabela-rolagem"><table class="ranking" id="pj-comp"></table></div>
+          <button class="btn-sec mais" id="pj-comp-mais" type="button" hidden>Mostrar mais</button></article>
+        <article class="visual span-12"><header><h2 id="pj-lista-tit">Projetos aprovados</h2>
+          <span class="filtros-tabela"><select id="pj-nivel" class="mini"><option value="">Toda relevância</option><option value="alto">Alta</option><option value="medio">Média</option><option value="baixo">Baixa</option><option value="simbolico">Simbólica</option></select>
+          <select id="pj-tema" class="mini"><option value="">Todos os temas</option></select>
+          <input id="pj-busca" class="mini-busca" type="search" placeholder="Buscar na ementa (ex.: 6x1, saúde)"></span></header>
+          <div id="pj-lista-aviso" class="sub"></div>
+          <ol class="cartoes" id="pj-lista"></ol>
+          <button class="btn-sec mais" id="pj-mais" type="button" hidden>Mostrar mais</button></article>
+      </div>
+    </section>
+
+    <!-- ====================== O QUE DAVA PRA FAZER ====================== -->
+    <section class="pagina" data-pag="dava">
+      <div class="selos-legenda"><span class="selo-t t-es">Análise</span>
+        <small>Comparação ilustrativa: quanto do dinheiro gasto em transporte, alimentação, hospedagem e divulgação poderia virar escola, hospital, posto de saúde ou Bolsa Família. A regra do "excesso" é uma escolha do projeto, explicada abaixo — não é um cálculo oficial de desperdício.</small></div>
+      <div class="dava-topo visual">
+        <p class="sub" id="dv-sub"></p>
+        <div class="destaque-valor" id="dv-total">—</div>
+        <p class="sub" id="dv-regra"></p>
+      </div>
+      <div class="dava-cards" id="dv-cards"></div>
+      <div class="grade">
+        <article class="visual span-6"><header><h2>De onde vem o valor</h2></header><div class="tabela-rolagem"><table class="ranking" id="dv-grupos"></table></div><p class="dica" id="dv-nota"></p></article>
+        <article class="visual span-6"><header><h2>Quem mais gastou nesses grupos</h2><span class="dica">top 10 · clique para abrir</span></header><div class="tabela-rolagem"><table class="ranking" id="dv-top"></table></div></article>
+        <article class="visual span-12 texto"><header><h2>Custos de referência e fontes</h2></header><div id="dv-fontes"></div>
+          <p class="sub">Os valores podem ser ajustados no arquivo <code>docs/referencias.js</code>.</p></article>
+      </div>
+    </section>
+
+    <!-- ====================== RANKINGS E MAPA ====================== -->
+    <section class="pagina" data-pag="rankings">
+      <div class="seletor-cat"><label>Tipo de gasto<select id="r-cat"></select></label></div>
+      <div class="grade">
+        <article class="visual span-6"><header><h2 id="r-tit-top">Quem mais gastou</h2></header><div class="canvas-box muito-alto"><canvas id="g-r-top"></canvas></div></article>
+        <article class="visual span-6"><header><h2 id="r-tit-mapa">Por estado</h2><span class="dica">média por deputado</span></header>
+          <div class="mapa" id="mapa-r"></div><div class="mapa-legenda" id="mapa-r-leg"></div></article>
+        <article class="visual span-6"><header><h2>Quem mais economizou a cota</h2><span class="dica">% da cota disponível que não foi usada</span></header><div class="canvas-box alto"><canvas id="g-r-economia"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Distribuição do custo mensal por partido</h2><span class="dica">barra: metade do meio dos deputados · ponto: mediana</span></header><div class="canvas-box alto"><canvas id="g-r-box"></canvas></div></article>
+      </div>
+    </section>
+
+    <!-- ====================== PREVISÕES ====================== -->
+    <section class="pagina" data-pag="previsoes">
+      <div id="prev-fechado" class="vazio" hidden></div>
+      <div id="prev-conteudo">
+        <div class="kpis" id="prev-kpis"></div>
+        <div class="grade">
+          <article class="visual span-12"><header><h2>Acumulado no ano: realizado e previsto</h2><span class="dica">faixa: intervalo provável (80%)</span></header><div class="canvas-box alto"><canvas id="g-prev"></canvas></div></article>
+          <article class="visual span-12"><header><h2>Quem deve gastar mais até dezembro</h2></header><ol class="frases" id="prev-lista"></ol>
+            <button class="btn-sec mais" id="prev-mais" type="button" hidden>Mostrar mais</button></article>
+          <article class="visual span-12 texto"><h2>Como a previsão é feita</h2>
+            <p>Para cada deputado em exercício, somamos o que já se sabe pelas normas (salário, 13º, auxílio-moradia) ao ritmo médio dos <b>últimos 6 meses</b> de cota parlamentar e verba de gabinete, ajustado pelo comportamento típico de cada mês nos anos anteriores (dezembro, por exemplo, costuma ser mais caro). A faixa mostra onde o valor deve cair em 8 de cada 10 cenários. É uma projeção estatística, não uma informação oficial.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== HISTÓRICO ====================== -->
+    <section class="pagina" data-pag="historico">
+      <div class="kpis" id="h-kpis"></div>
+      <div class="grade">
+        <article class="visual span-12"><header><h2>Custo total da Câmara por ano</h2><span class="dica" id="hist-dica"></span></header><div class="canvas-box alto"><canvas id="g-hist"></canvas></div></article>
+        <article class="visual span-12"><header><h2>Mês a mês, desde 2009</h2></header><div class="canvas-box alto"><canvas id="g-hist-mensal"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Custo médio de um deputado por mês</h2></header><div class="canvas-box alto"><canvas id="g-hist-medio"></canvas></div></article>
+        <article class="visual span-6"><header><h2>Como a cota foi usada ao longo dos anos</h2></header><div class="canvas-box alto"><canvas id="g-hist-cat"></canvas></div></article>
+        <article class="visual span-12"><header><h2>Cota mais alta em ano eleitoral</h2><span class="dica">deputados cuja cota mensal subiu 30% ou mais no ano da eleição</span></header><ol class="cartoes" id="h-eleitoral"></ol></article>
+        <article class="visual span-12"><header><h2>Tabela</h2></header><div class="tabela-rolagem"><table class="comp-tab" id="hist-tab"></table></div></article>
+      </div>
+    </section>
+
+    <!-- ====================== MÉTODO ====================== -->
+    <section class="pagina" data-pag="metodo">
+      <article class="visual texto">
+        <h2>Presença e faltas</h2>
+        <p>Fonte: dados abertos da Câmara (arquivos anuais de eventos e de presença de deputados em eventos). Contamos, como a própria Câmara, os <b>dias com sessão deliberativa no Plenário</b>: o deputado está presente no dia se registrou presença em ao menos uma sessão deliberativa daquele dia. Só entram os meses em que ele estava em exercício. Sessões solenes e canceladas não contam; recesso (18 a 31 de julho e 23 de dezembro a 1º de fevereiro) nunca é falta. A divisão oficial em ausência justificada ou não justificada não está nos dados abertos: quando a página do deputado mostra esses números, eles aparecem como "oficial". Reuniões de comissão aparecem como número de presenças registradas.</p>
+        <h2>Projetos aprovados</h2>
+        <p>Fonte: dados abertos da Câmara (proposições, temas e autores). Entram projetos aprovados desde 2009 (viraram lei, foram enviados ao Senado, promulgados ou vetados). Cada projeto conta para todos os seus autores e coautores. A relevância (0 a 100) soma o tipo do projeto, os temas e palavras do assunto, com teto baixo para homenagens, datas comemorativas, concessões de rádio e TV e acordos internacionais. É uma análise do projeto, não uma informação oficial.</p>
+        <h2>Como calculamos</h2>
+        <ul>
+          <li><b>Salário</b>: subsídio fixado em decreto legislativo (DL 112/2007, 805/2010, 276/2014 e 172/2022), multiplicado pelos meses em exercício (meses com verba de gabinete ou cota usadas). Em anos fechados soma o 13º proporcional.</li>
+          <li><b>Ajudas de custo</b>: até 2012, dois subsídios extras por ano (o "14º e 15º", extintos em 2013); desde então, um subsídio no início e outro no fim de cada mandato.</li>
+          <li><b>Auxílio-moradia</b>: valor mensal vigente (R$ 3.000 → 3.800 em 2013 → 4.253 desde 2015) para quem a página do deputado informa que recebe. Desde 2023 o deputado pode complementar o aluguel com a cota (até R$ 4.148,80); esse complemento já está na cota. Quem usa imóvel funcional não recebe; o imóvel não é monetizado aqui.</li>
+          <li><b>Cota parlamentar (CEAP)</b>: soma do valor líquido reembolsado, nota a nota, do arquivo de dados abertos da Câmara. Quando a página oficial do deputado mostra, num mês, valor diferente do arquivo, vale a página oficial e a diferença aparece como "sem nota no arquivo aberto" — desde agosto de 2025 são principalmente passagens compradas pelo sistema da Câmara (SIGEPA), que o arquivo não traz.</li>
+          <li><b>Verba de gabinete</b>: valor gasto com o pessoal do gabinete, informado na página do deputado. De 2009 a 2012 a página não traz esse valor; esses anos ficam sem ele.</li>
+          <li><b>Valores de hoje</b>: cada ano é corrigido pelo IPCA (Banco Central, série 433), usando o índice médio do ano.</li>
+          <li><b>Emendas</b> não entram no custo do mandato: são recursos do Orçamento que o deputado indica para estados, municípios e entidades.</li>
+          <li>Não incluídos: encargos patronais, plano de saúde, passaporte diplomático, diárias de missão oficial e custos indiretos da Câmara.</li>
+        </ul>
+        <h2>Pontos de atenção</h2>
+        <ul>
+          <li><b>Concentração</b>: um único fornecedor recebeu 40% ou mais da cota do deputado no ano (sem contar passagens, telefone, correios e escritório, em que isso é normal), com pelo menos R$ 30 mil.</li>
+          <li><b>Fornecedor exclusivo</b>: empresa que, no ano, recebeu R$ 60 mil ou mais da cota e de um só deputado.</li>
+          <li><b>Fim de semana</b>: 20% ou mais do valor de divulgação, consultorias, veículos, segurança ou aeronaves em notas emitidas em sábado ou domingo (mínimo de R$ 10 mil).</li>
+          <li><b>Valores redondos</b>: 4 ou mais notas de divulgação ou consultoria com valor exato em milhares (R$ 5.000, R$ 12.000…).</li>
+          <li><b>Pico fora do padrão</b>: um mês com gasto da cota mais de 3 desvios-padrão acima da média mensal do próprio deputado (e R$ 20 mil acima dela).</li>
+          <li><b>Ano eleitoral</b>: cota mensal no ano da eleição 30% ou mais acima da média dos anos vizinhos (e R$ 30 mil a mais no ano).</li>
+        </ul>
+        <h2>Novas notas de hoje</h2>
+        <p>Todo dia o robô baixa o arquivo da cota parlamentar do ano e compara com as notas que já tinha visto (pelo código de cada documento na Câmara). O que aparece pela primeira vez entra no lote do dia. A página guarda o lote de hoje e os 3 anteriores. "Antes" e "depois" comparam o ano sem e com as notas do lote. Os destaques marcam notas acima de 95% das notas do mesmo tipo no ano, valores redondos em milhares, emissão em fim de semana, primeira vez que o deputado paga aquele fornecedor no ano, fornecedor que ninguém tinha pago no ano, emissão há mais de 90 dias, valor cortado pela Câmara (glosa) e estornos. São padrões automáticos, não acusação. Valores da época (sem correção pela inflação).</p>
+        <h2>Previsões</h2>
+        <p>Parte fixa pelas normas + ritmo dos últimos 6 meses de cota e gabinete, ajustado pela sazonalidade mensal da Câmara nos anos anteriores. Faixa de 80% calculada pela variação mês a mês de cada deputado.</p>
+        <p class="fontes" id="fontes"></p>
+        <p class="sub">Mapa do Brasil: "Map of Brazil", de Victor Cazanave (svg-maps), licença <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>. Fotos dos deputados: Câmara dos Deputados.</p>
+      </article>
+    </section>
+  </main>
+  <footer class="rodape"><p>Projeto independente, sem vínculo com a Câmara dos Deputados. Dados públicos; código aberto.</p></footer>
+</div>
+<div class="veu" id="veu" hidden></div>
+
+<button class="flutuante" id="ir-comparar" hidden>Comparar <span id="n-comp2"></span></button>
+
+<dialog id="dlg-card" aria-label="Imagem para compartilhar">
+  <button class="fechar" id="fechar-card" aria-label="Fechar">×</button>
+  <div class="card-corpo">
+    <h2>Imagem para compartilhar</h2>
+    <div class="card-formatos" role="group" aria-label="Formato">
+      <button type="button" data-fmt="feed" aria-pressed="true">Feed (4:5)</button>
+      <button type="button" data-fmt="story" aria-pressed="false">Status / Stories (9:16)</button>
+    </div>
+    <canvas id="card-canvas" width="1080" height="1350"></canvas>
+    <div class="card-acoes">
+      <button class="btn" id="card-compartilhar" type="button">Compartilhar</button>
+      <button class="btn-sec" id="card-baixar" type="button">Baixar imagem</button>
+    </div>
+    <p class="sub">A imagem leva a fonte, a data dos dados e o endereço do site.</p>
+  </div>
+</dialog>
+
+<div class="balao" id="balao" role="tooltip" hidden></div>
+
+<dialog id="detalhe" aria-labelledby="d-nome">
+  <button class="fechar" id="fechar" aria-label="Fechar">×</button>
+  <div id="d-corpo"></div>
+</dialog>
+
+<div class="bv-fundo" id="bv" hidden role="dialog" aria-modal="true" aria-labelledby="bv-tit">
+  <div class="bv-caixa"><button class="fechar" id="bv-fechar" type="button" aria-label="Fechar">×</button>
+    <p class="selo">Projeto Quanto Custa</p><h2 id="bv-tit"></h2><div id="bv-texto" class="texto"></div>
+    <p><button class="btn" id="bv-ok" type="button">Começar</button></p></div>
+</div>
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/mapa-brasil.js"></script>
+<script src="textos.js?v=13"></script>
+<script src="referencias.js?v=13"></script>
+<script src="app.js?v=13"></script>
+</body>
+</html>
