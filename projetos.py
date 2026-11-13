@@ -71,10 +71,49 @@ def agregar_por_deputado(itens: list[dict]) -> dict:
     return por_dep
 
 
+def datas_de_aprovacao(itens: list[dict], minutos: float) -> dict[str, str]:
+    """{id: data da aprovação na Câmara}, pelo histórico de tramitação de cada proposição (API da Câmara).
+    A data não muda depois, então fica guardada em dados_brutos/projetos/aprovacao.json e só os projetos
+    novos são consultados. O que não der tempo fica para a próxima execução (com a data estimada)."""
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    arq = RAIZ / "dados_brutos" / "projetos_aprovacao.json"
+    guard = ler(arq, {}) or {}
+    falta = [str(x["id"]) for x in itens if str(x["id"]) not in guard]
+    log.info("Datas de aprovação: %d guardadas, %d para consultar", len(guard), len(falta))
+    ses = http.sessao()
+    fim = time.time() + minutos * 60
+
+    def uma(pid):
+        if time.time() > fim:
+            return pid, None
+        try:
+            r = ses.get(config.API_CAMARA + f"/proposicoes/{pid}/tramitacoes", headers={"Accept": "application/json"}, timeout=(20, 60))
+            if r.status_code != 200:
+                return pid, None
+            time.sleep(0.25)
+            return pid, projetos.data_aprovacao(r.json().get("dados") or []) or ""
+        except Exception:  # noqa: BLE001
+            return pid, None
+    novas = 0
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        for i, (pid, d) in enumerate(ex.map(uma, falta), 1):
+            if d is not None:
+                guard[pid] = d
+                novas += 1
+            if i % 500 == 0:
+                log.info("  %d/%d consultadas", i, len(falta))
+                gravar(arq, guard)
+    gravar(arq, guard)
+    log.info("Datas de aprovação: %d novas; %d ainda sem data (ficam para a próxima)", novas, len([p for p in falta if p not in guard]))
+    return {k: v for k, v in guard.items() if v}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--tudo", action="store_true")
     ap.add_argument("--anos", type=int, nargs="*")
+    ap.add_argument("--minutos-tramitacao", type=float, default=150, help="tempo máximo para buscar datas de aprovação")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     anos = args.anos or list(range(config.PROP_ANO_APRESENTACAO_INICIAL, date.today().year + 1))
@@ -109,6 +148,14 @@ def main(argv=None):
     for p in sorted(CACHE.glob("*.json")):
         for it in (ler(p, {}) or {}).get("itens", []):
             todos[it["id"]] = it
+    # ano da APROVAÇÃO (e não da última movimentação, que muda a cada ofício ou recebimento)
+    datas = datas_de_aprovacao(list(todos.values()), args.minutos_tramitacao)
+    for it in todos.values():
+        it["data_situacao"] = it.get("data_situacao") or it["data"]
+        d = datas.get(str(it["id"]))
+        it["data"] = d or it["data_situacao"]
+        it["data_estimada"] = not d
+    todos = {k: v for k, v in todos.items() if int(v["data"][:4]) >= config.PROP_APROVADOS_DESDE}
     itens = sorted(todos.values(), key=lambda x: (x["data"], x["nota"]), reverse=True)
     niveis = Counter(x["nivel"] for x in itens)
     por_dep = agregar_por_deputado(itens)

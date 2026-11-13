@@ -501,3 +501,13 @@ def test_cpf_mascarado():
     assert m("00000017295") == "00000017295" and m("EMPRESA LTDA 2000004245") == "EMPRESA LTDA 2000004245"
     assert m("12.345.678/0001-90") == "12.345.678/0001-90"
     assert doc_publico("187.643.110/19  -") == "***.643.110-**" and doc_publico("12.345.678/0001-90") == "12.345.678/0001-90"
+
+
+def test_data_aprovacao():
+    from coletor import projetos as P
+    tr = [{"dataHora": "2026-03-10T10:00", "sequencia": 9, "descricaoSituacao": "Aguardando Apreciação pelo Senado Federal", "descricaoTramitacao": "Recebimento de ofício"},
+          {"dataHora": "2021-05-04T18:00", "sequencia": 5, "descricaoSituacao": "Aguardando Apreciação pelo Senado Federal", "descricaoTramitacao": "Remessa ao Senado Federal por meio do Of. nº 100"},
+          {"dataHora": "2021-04-20T15:00", "sequencia": 4, "descricaoSituacao": "Pronta para Pauta no Plenário (PLEN)", "descricaoTramitacao": "Aprovado o requerimento de urgência"},
+          {"dataHora": "2019-02-01T10:00", "sequencia": 1, "descricaoSituacao": "Aguardando Designação de Relator", "descricaoTramitacao": "Apresentação do Projeto"}]
+    assert P.data_aprovacao(tr) == "2021-05-04"
+    assert P.data_aprovacao([{"dataHora": "2020-01-01", "descricaoSituacao": "Arquivada", "descricaoTramitacao": "Arquivamento"}]) is None

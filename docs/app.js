@@ -1653,7 +1653,7 @@
   const projDoAno = (ano) => cache("pj-ano" + ano, () => getJSON(`dados/projetos/ano_${ano}.json`));
   const NIVEL = { alto: ["Alta", "#16865D"], medio: ["Média", "#2475B8"], baixo: ["Baixa", "#8FA3B8"], simbolico: ["Simbólica", "#B0B7C1"] };
   const cartaoProjeto = (x, url) => `<li style="--c:${NIVEL[x.nivel]?.[1] || "#999"}"><span class="tag pj-nivel">${NIVEL[x.nivel]?.[0] || x.nivel} · ${x.nota}</span>
-    <a href="${esc((url || "").replace("{id}", x.id))}" target="_blank" rel="noopener"><b>${esc(x.sigla)} ${x.numero}/${x.ano}</b></a> <span class="sub">${esc(x.situacao_texto || x.situacao)} em ${dataCurta(x.data)}</span>
+    <a href="${esc((url || "").replace("{id}", x.id))}" target="_blank" rel="noopener"><b>${esc(x.sigla)} ${x.numero}/${x.ano}</b></a> <span class="sub">${x.data_estimada === false ? `aprovado na Câmara em ${dataCurta(x.data)} · ${esc(x.situacao_texto || x.situacao)}` : `${esc(x.situacao_texto || x.situacao)} em ${dataCurta(x.data)}`}</span>
     <p>${esc(x.ementa)}</p>${(x.temas || []).length ? `<span class="sub">${esc(x.temas.slice(0, 3).join(" · "))}</span><br>` : ""}
     <span class="pj-autores">${(x.deputados_autores || []).length ? "Autoria: " + x.deputados_autores.slice(0, 5).map((a) => `<button class="link-dep" data-dep="${a[0]}">${esc(a[1])}</button> ${esc(a[2] || "")}-${esc(a[3] || "")}`).join(", ") + (x.n_autores > 5 ? ` e mais ${x.n_autores - 5}` : "") : "Autoria: " + esc(x.autor_principal || "—")}</span></li>`;
 

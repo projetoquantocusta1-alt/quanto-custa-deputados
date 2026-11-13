@@ -138,6 +138,26 @@ def relevancia(sigla: str, ementa: str, temas: list[str], keywords: str = "", co
     return nota, nivel, motivos
 
 
+# ------------------------------------------------------------- data da aprovação
+_TRAMITACAO_APROVA = re.compile(r"remessa ao senado|remetid[ao] ao senado|envio ao senado|encaminhad[ao] ao senado|"
+                                r"remessa a sancao|enviad[ao] a sancao|encaminhad[ao] a sancao|remessa a promulgacao|"
+                                r"transformad[ao] (em|na) (lei|norma)|promulgad[ao]")
+
+
+def data_aprovacao(tramitacoes: list[dict]) -> str | None:
+    """Data em que a proposição foi aprovada na Câmara: a primeira movimentação em que a situação passa a
+    "aprovada" (aguardando o Senado, sanção ou promulgação, virou lei, vetada) ou que registra a remessa ao
+    Senado / à sanção. A situação atual da proposição muda de data a cada nova movimentação (ofícios,
+    recebimentos), por isso não serve para dizer em que ano ela foi aprovada."""
+    for t in sorted(tramitacoes or [], key=lambda t: (str(t.get("dataHora") or ""), int(t.get("sequencia") or 0))):
+        dh = str(t.get("dataHora") or "")[:10]
+        if not dh:
+            continue
+        if situacao(str(t.get("descricaoSituacao") or "")) or _TRAMITACAO_APROVA.search(sem_acento(str(t.get("descricaoTramitacao") or ""))):
+            return dh
+    return None
+
+
 # ------------------------------------------------------------- leitura dos arquivos
 def ler_csv(conteudo: bytes) -> list[dict]:
     txt = conteudo.decode("utf-8-sig", errors="replace")
