@@ -23,6 +23,7 @@ from coletor import notas as N
 log = logging.getLogger("qcd")
 
 DIAS_GUARDADOS = 4          # hoje + 3 dias anteriores com notas novas
+DIAS_SEMANA = 7             # "notas da semana": 7 dias até a nota mais recente publicada
 LIMITE_REINICIO = 0.3       # se "tudo" virar novo, a Câmara refez o arquivo: recomeça
 
 # marcas de cada nota (bits)
@@ -202,6 +203,27 @@ def _atualizar_indice(pasta: Path, hoje: date, inicio: str | None = None):
     return idx
 
 
+# ------------------------------------------------------- notas da semana
+def gravar_semana(df: pd.DataFrame, ano: int, info: dict, hoje: date, pasta: Path) -> dict | None:
+    """Notas emitidas nos 7 dias que terminam na nota mais recente já publicada (até hoje).
+    Grava docs/dados/novas/semana.json no mesmo formato de um lote diário."""
+    datas = df["data"].dropna()
+    datas = datas[datas <= pd.Timestamp(hoje)]
+    if datas.empty:
+        return None
+    fim = datas.max().normalize()
+    ini = fim - pd.Timedelta(days=DIAS_SEMANA - 1)
+    m = df["data"].notna() & (df["data"] >= ini) & (df["data"] < fim + pd.Timedelta(days=1))
+    if not m.any():
+        return None
+    sec = montar_secao(df, set(df.loc[m, "k"]), ano, info, hoje)
+    _gravar(pasta / "semana.json", {"data": "semana", "de": ini.strftime("%Y-%m-%d"), "ate": fim.strftime("%Y-%m-%d"),
+                                    "gerado_em": datetime.now(timezone.utc).isoformat(timespec="minutes"),
+                                    "anos": {str(ano): sec}})
+    return {"de": ini.strftime("%Y-%m-%d"), "ate": fim.strftime("%Y-%m-%d"), "notas": int(m.sum()),
+            "valor": round(float(df.loc[m, "valor"].sum()), 2), "deputados": int(df.loc[m, "id"].nunique())}
+
+
 # --------------------------------------------------------------------- main
 def processar(ceap_df: pd.DataFrame, ano: int, info: dict, hoje: date, saida: Path, brutos: Path) -> dict:
     """Detecta e grava as notas novas de `ano`. Devolve um pequeno resumo."""
@@ -210,6 +232,14 @@ def processar(ceap_df: pd.DataFrame, ano: int, info: dict, hoje: date, saida: Pa
     dia = hoje.isoformat()
     df = N.preparar(ceap_df)
     df["k"] = chaves(df)
+    if ano == hoje.year:
+        try:
+            sem = gravar_semana(df, ano, info, hoje, pasta)
+            idx = _ler(pasta / "indice.json", {}) or {}
+            idx["semana"] = sem
+            _gravar(pasta / "indice.json", idx)
+        except Exception as e:  # noqa: BLE001 — a semana é complemento; não derruba as notas novas
+            log.warning("  notas da semana %s: %s", ano, e)
 
     if not arq.exists():
         _escrever_vistas(arq, df["k"], "0")

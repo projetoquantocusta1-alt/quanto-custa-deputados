@@ -275,6 +275,10 @@ def test_notas_novas(tmp_path):
     assert r["notas"] == 2
     idx = novas._ler(saida / "novas" / "indice.json")
     assert [d["notas"] for d in idx["dias"]] == [1, 2] and idx["inicio"] == "2026-11-10"
+    # notas da semana: 7 dias até a nota mais recente (09/11) -> 03/11 a 09/11 (as de 07 e 09/11)
+    assert idx["semana"]["de"] == "2026-11-03" and idx["semana"]["ate"] == "2026-11-09" and idx["semana"]["notas"] == 2
+    sem = novas._ler(saida / "novas" / "semana.json")
+    assert sem["data"] == "semana" and len(sem["anos"]["2026"]["n"]) == 2
 
 
 # ------------------------------------------------------------ Receita

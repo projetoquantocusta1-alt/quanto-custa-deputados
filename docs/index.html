@@ -29,7 +29,7 @@
       <button data-pag="projetos"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 14l2 2 4-4"/></svg>Projetos aprovados</button>
     </div></div>
     <div class="grupo"><span class="grupo-rot" tabindex="0">Investigar gastos</span><div class="grupo-itens">
-      <button data-pag="novas"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5"/></svg>Novas notas de hoje <span class="contador novo" id="n-novas" hidden></span></button>
+      <button data-pag="novas"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5"/></svg>Notas da semana <span class="contador novo" id="n-novas" hidden></span></button>
       <button data-pag="fornecedores"><svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg>Fornecedores</button>
       <button data-pag="atencao"><svg viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18h.01"/></svg>Pontos de atenção</button>
     </div></div>
@@ -123,7 +123,7 @@
       <div class="atalhos">
         <button data-ir="geral"><b>Visão geral</b><span>Quanto custa a Câmara, mês a mês, por partido e por estado.</span></button>
         <button data-ir="deputados"><b>Deputados</b><span>O custo de cada um, com ficha completa e imagem para compartilhar.</span></button>
-        <button data-ir="novas"><b>Novas notas de hoje</b><span>As despesas que a Câmara publicou nos últimos dias, uma a uma.</span></button>
+        <button data-ir="novas"><b>Notas da semana</b><span>As despesas emitidas na última semana, uma a uma, e o que a Câmara publicou a cada dia.</span></button>
         <button data-ir="comparar"><b>Comparar</b><span>Até 6 deputados lado a lado.</span></button>
         <button data-ir="fornecedores"><b>Fornecedores</b><span>Quais empresas mais recebem dinheiro da cota, com cada nota fiscal.</span></button>
         <button data-ir="atencao"><b>Pontos de atenção</b><span>Padrões estatísticos que merecem um olhar mais de perto.</span></button>
@@ -433,8 +433,9 @@
           <li><b>Pico fora do padrão</b>: um mês com gasto da cota mais de 3 desvios-padrão acima da média mensal do próprio deputado (e R$ 20 mil acima dela).</li>
           <li><b>Ano eleitoral</b>: cota mensal no ano da eleição 30% ou mais acima da média dos anos vizinhos (e R$ 30 mil a mais no ano).</li>
         </ul>
-        <h2>Novas notas de hoje</h2>
-        <p>Todo dia o robô baixa o arquivo da cota parlamentar do ano e compara com as notas que já tinha visto (pelo código de cada documento na Câmara). O que aparece pela primeira vez entra no lote do dia. A página guarda o lote de hoje e os 3 anteriores. "Antes" e "depois" comparam o ano sem e com as notas do lote. Os destaques marcam notas acima de 95% das notas do mesmo tipo no ano, valores redondos em milhares, emissão em fim de semana, primeira vez que o deputado paga aquele fornecedor no ano, fornecedor que ninguém tinha pago no ano, emissão há mais de 90 dias, valor cortado pela Câmara (glosa) e estornos. São padrões automáticos, não acusação. Valores da época (sem correção pela inflação).</p>
+        <h2>Notas da semana</h2>
+        <p><b>Última semana</b> (o que a página mostra primeiro): as notas emitidas nos 7 dias que terminam na nota mais recente que a Câmara já publicou. Como a Câmara publica com atraso, a semana mostrada pode terminar alguns dias antes de hoje.</p>
+        <p><b>Lotes do dia</b>: Todo dia o robô baixa o arquivo da cota parlamentar do ano e compara com as notas que já tinha visto (pelo código de cada documento na Câmara). O que aparece pela primeira vez entra no lote do dia. A página guarda o lote de hoje e os 3 anteriores. "Antes" e "depois" comparam o ano sem e com as notas do lote. Os destaques marcam notas acima de 95% das notas do mesmo tipo no ano, valores redondos em milhares, emissão em fim de semana, primeira vez que o deputado paga aquele fornecedor no ano, fornecedor que ninguém tinha pago no ano, emissão há mais de 90 dias, valor cortado pela Câmara (glosa) e estornos. São padrões automáticos, não acusação. Valores da época (sem correção pela inflação).</p>
         <h2>Previsões</h2>
         <p>Parte fixa pelas normas + ritmo dos últimos 6 meses de cota e gabinete, ajustado pela sazonalidade mensal da Câmara nos anos anteriores. Faixa de 80% calculada pela variação mês a mês de cada deputado.</p>
         <p class="fontes" id="fontes"></p>
@@ -481,6 +482,6 @@
 <script src="vendor/mapa-brasil.js"></script>
 <script src="textos.js?v=13"></script>
 <script src="referencias.js?v=13"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>

@@ -1278,7 +1278,7 @@
         if (!o) cats.set(k, { cat: c, ano, antes: x[0], depois: x[1], p50: x[2], p95: x[3], n: x[4] }); else o.depois = x[1]; });
       const t = tot.get(ano); if (!t) tot.set(ano, { ...s.tot }); else Object.assign(t, { depois: s.tot.depois, notas_depois: s.tot.notas_depois });
       s.n.forEach((n) => { const f = s.f[n[1]] || [], cat = s.c[n[2]];
-        notas.push({ dia: L.data, ano, id: n[0], chave: f[0], fnome: f[1], doc: f[2], tipo: f[3], cat, data: n[3], v: n[4] / 100, num: n[5], url: n[6],
+        notas.push({ dia: L.data === "semana" ? (L.gerado_em || "").slice(0, 10) : L.data, ano, id: n[0], chave: f[0], fnome: f[1], doc: f[2], tipo: f[3], cat, data: n[3], v: n[4] / 100, num: n[5], url: n[6],
           glosa: n[7] / 100, m: n[8], trecho: n[9] || "", pass: n[10] || "", dep: deps.get(`${ano}|${n[0]}`), cx: cats.get(`${ano}|${cat}`) }); });
     }));
     notas.forEach((n) => { n.dep = deps.get(`${n.ano}|${n.id}`); n.cx = cats.get(`${n.ano}|${n.cat}`); n.fx = forn.get(n.chave); });
@@ -1288,8 +1288,8 @@
   async function renderNovas() {
     const idx = await indiceNovas();
     const aviso = $("#nv-aviso"), corpo = $("#nv-conteudo");
-    const dias = idx?.dias || [];
-    if (!dias.length) {
+    const dias = idx?.dias || [], sem = idx?.semana;
+    if (!dias.length && !sem) {
       corpo.hidden = true; aviso.hidden = false; $("#nv-dias").innerHTML = ""; $("#nv-sub").textContent = "";
       aviso.innerHTML = idx?.inicio
         ? `O robô começou a acompanhar as notas em ${dataBR(idx.inicio)}. A cada atualização diária, as despesas que a Câmara publicar aparecem aqui. Ainda não houve notas novas desde então.`
@@ -1297,15 +1297,16 @@
       return;
     }
     corpo.hidden = false;
-    if (!NV.dia || (NV.dia !== "todos" && !dias.some((d) => d.data === NV.dia))) NV.dia = dias[0].data;
+    // padrão: as notas emitidas na última semana com dados publicados
+    if (!NV.dia || (NV.dia !== "todos" && NV.dia !== "semana" && !dias.some((d) => d.data === NV.dia)) || (NV.dia === "semana" && !sem)) NV.dia = sem ? "semana" : dias[0].data;
     const h = hojeISO();
-    $("#nv-dias").innerHTML = dias.map((d) => `<button type="button" data-nv-dia="${d.data}" aria-pressed="${NV.dia === d.data}">
+    $("#nv-dias").innerHTML = (sem ? `<button type="button" data-nv-dia="semana" aria-pressed="${NV.dia === "semana"}"><b>Última semana</b><span>${dataBR(sem.de).slice(0, 5)} a ${dataBR(sem.ate).slice(0, 5)} · ${nf(sem.notas)} notas · ${compacto(sem.valor)}</span></button>` : "") + dias.map((d) => `<button type="button" data-nv-dia="${d.data}" aria-pressed="${NV.dia === d.data}">
         <b>${rotuloDia(d.data)}</b><span>${nf(d.notas)} notas · ${compacto(d.valor)}</span></button>`).join("")
       + (dias.length > 1 ? `<button type="button" data-nv-dia="todos" aria-pressed="${NV.dia === "todos"}"><b>Últimos ${dias.length} lotes</b><span>${nf(soma(dias.map((d) => d.notas)))} notas · ${compacto(soma(dias.map((d) => d.valor)))}</span></button>` : "");
     const verif = idx.verificado_em ? new Date(idx.verificado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "";
-    $("#nv-sub").innerHTML = `${dias[0].data !== h ? `Ainda não há notas novas hoje — o lote mais recente é de ${dataBR(dias[0].data)}. ` : ""}Última verificação: ${verif}. A Câmara publica as notas aos poucos, ao longo da semana. Valores da época (sem correção pela inflação). Passagens compradas pelo sistema da Câmara (SIGEPA) não entram aqui: o arquivo aberto não as traz nota a nota.`;
+    $("#nv-sub").innerHTML = `${NV.dia === "semana" ? `<b>Última semana</b>: notas emitidas de ${dataBR(sem.de)} a ${dataBR(sem.ate)} (os 7 dias até a nota mais recente que a Câmara já publicou). Os botões ao lado mostram as notas que a Câmara publicou em cada dia. ` : dias.length && dias[0].data !== h ? `Ainda não há notas novas hoje — o lote mais recente é de ${dataBR(dias[0].data)}. ` : ""}Última verificação: ${verif}. A Câmara publica as notas aos poucos, ao longo da semana. Valores da época (sem correção pela inflação). Passagens compradas pelo sistema da Câmara (SIGEPA) não entram aqui: o arquivo aberto não as traz nota a nota.`;
     aviso.hidden = true;
-    const escolhidos = NV.dia === "todos" ? dias.map((d) => d.data) : [NV.dia];
+    const escolhidos = NV.dia === "todos" ? dias.map((d) => d.data) : [NV.dia];   // "semana" lê dados/novas/semana.json
     const lotes = (await Promise.all(escolhidos.map(loteNovas))).filter(Boolean).sort((a, b) => (a.data < b.data ? -1 : 1));
     NV.dados = juntarLotes(lotes);
     desenharNovas();
