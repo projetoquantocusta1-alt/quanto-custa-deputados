@@ -595,28 +595,46 @@
     ]);
   }
 
+  // projetos aprovados por deputado no período escolhido (arquivo dos projetos)
+  const REL_MIN = { ano: 1, total: 3 };   // etiqueta: relevantes como 1º autor no ano (ou em todos os anos)
+  function projDe(id) {
+    const p = E.PD?.[String(id)]; if (!E.PD) return null;
+    if (!p) return { aprov: 0, rel: 0, sup: 0, relAutor: 0 };
+    if (ehTotal()) return { aprov: p.aprovados, rel: (p.alto || 0) + (p.medio || 0), sup: (p.baixo || 0) + (p.simbolico || 0), relAutor: p.rel_autor || 0 };
+    const y = (p.anos || {})[String(E.resumo.ano)] || [];
+    return { aprov: y[0] || 0, rel: (y[2] || 0) + (y[3] || 0), sup: (y[5] || 0) + (y[6] || 0), relAutor: y[7] || 0 };
+  }
+  const aprovaRelevantes = (pj) => pj && pj.relAutor >= (ehTotal() ? REL_MIN.total : REL_MIN.ano);
+
   function renderDeputados() {
+    if (E.PD === undefined) { E.PD = null; projPorDep().then((pd) => { E.PD = pd || {}; if (E.pag === "deputados") renderDeputados(); }).catch(() => { E.PD = {}; }); }
     const deps = filtrados(), temPrev = E.resumo.meses_decorridos < 12;
     kpisDeputados(deps);
     const cols = [["sel", "", ""], ["posicao", "#", "num"], ["nome", "Deputado", ""], ["custo_mandato", "Custo no ano", "num"], ["custo_mensal_medio", "Por mês", "num"],
       ["cota_parlamentar", T("ceap", "Cota"), "num"], ["cota_uso", T("cota_uso", "Uso da cota"), "num"], ["verba_gabinete", T("gabinete", "Gabinete"), "num"],
-      ...(temPrev ? [["previsto", T("previsao", "Previsão até dez"), "num"]] : []), ["pontos", T("ponto", "Atenção"), "num"], ["emendas_empenhado", T("emenda", "Emendas"), "num"]];
+      ...(temPrev ? [["previsto", T("previsao", "Previsão até dez"), "num"]] : []), ["pontos", T("ponto", "Atenção"), "num"], ["emendas_empenhado", T("emenda", "Emendas"), "num"],
+      ["proj_aprov", `<span title="Projetos aprovados em que o deputado é autor ou coautor">Projetos aprovados</span>`, "num"],
+      ["proj_rel", `<span title="Relevância alta ou média: mudanças que afetam muita gente (saúde, educação, trabalho, renda, segurança…)">Relevantes</span>`, "num"],
+      ["proj_sup", `<span title="Relevância baixa ou simbólica: homenagens, datas comemorativas, nomes de rodovias e prédios, concessões de rádio e TV">Supérfluos</span>`, "num"]];
     const k = E.ordem;
-    const val = (d) => (k === "previsto" ? previsto(d) : k === "nome" ? d.nome : valorDe(d, k) || 0);
+    const PJ = { proj_aprov: "aprov", proj_rel: "rel", proj_sup: "sup" };
+    const val = (d) => (k === "previsto" ? previsto(d) : k === "nome" ? d.nome : PJ[k] ? (projDe(d.id) || {})[PJ[k]] || 0 : valorDe(d, k) || 0);
     const ord = deps.slice().sort((a, b) => { const x = val(a), y = val(b); const r = typeof x === "string" ? x.localeCompare(y, "pt-BR") : x - y; return E.asc ? r : -r; });
     const max = Math.max(...deps.map((d) => d.custo_mandato), 1);
     $("#ranking").innerHTML = `<thead><tr>${cols.map(([c, t, cl]) => `<th class="${cl}" data-col="${c}" ${c === k ? `aria-sort="${E.asc ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("")}</tr></thead>
-      <tbody>${ord.slice(0, E.limite).map((d) => `<tr>
+      <tbody>${ord.slice(0, E.limite).map((d) => { const pj = projDe(d.id); return `<tr>
         <td><input type="checkbox" data-sel="${d.id}" ${E.sel.includes(d.id) ? "checked" : ""} aria-label="Comparar ${esc(d.nome)}"></td>
         <td class="num sub">${d.posicao}º</td>
         <td class="nome-cel"><button class="link-dep" data-dep="${d.id}">${esc(d.nome)}</button> <span class="sub">${esc(d.partido || "s/ partido")}-${esc(d.uf || "")}</span>
+          ${aprovaRelevantes(pj) ? `<span class="etq-relevante" title="Primeiro autor de ${nf(pj.relAutor)} projeto(s) de relevância alta ou média aprovado(s) ${ehTotal() ? "desde 2009" : "em " + E.resumo.ano}">Aprova projetos relevantes</span>` : ""}
           <div class="mini-barra" aria-hidden="true">${COMP.map(([c, , cor]) => `<i style="width:${(100 * (d.custos[c] || 0) / max).toFixed(2)}%;background:var(${cor})"></i>`).join("")}</div></td>
         <td class="num"><b>${brl(R(d.custo_mandato))}</b></td><td class="num">${brl(R(d.custo_mensal_medio))}</td>
         <td class="num">${brl(R(d.custos.cota_parlamentar))}</td><td class="num">${d.cota_uso != null ? nf(d.cota_uso * 100) + "%" : "—"}</td>
         <td class="num">${brl(R(d.custos.verba_gabinete))}</td>
         ${temPrev ? `<td class="num prev-cel">${d.previsao?.ativo ? "+" + compacto(R(d.previsao.restante)) : "—"}</td>` : ""}
         <td class="num">${d.pontos ? `<span class="selo-pt" data-dep="${d.id}">${d.pontos}</span>` : ""}</td>
-        <td class="num">${compacto(R(d.emendas_empenhado))}</td></tr>`).join("") || `<tr><td colspan="11" class="sub">Nenhum deputado com esses filtros.</td></tr>`}</tbody>`;
+        <td class="num">${compacto(R(d.emendas_empenhado))}</td>
+        <td class="num">${pj ? nf(pj.aprov) : "…"}</td><td class="num">${pj ? `<b style="color:var(--ok)">${nf(pj.rel)}</b>` : "…"}</td><td class="num">${pj ? nf(pj.sup) : "…"}</td></tr>`; }).join("") || `<tr><td colspan="14" class="sub">Nenhum deputado com esses filtros.</td></tr>`}</tbody>`;
     $("#mais").hidden = ord.length <= E.limite;
     $("#mais").textContent = `Mostrar mais (${ord.length - E.limite} restantes)`;
   }

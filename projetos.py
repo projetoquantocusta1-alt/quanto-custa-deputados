@@ -46,6 +46,31 @@ def baixar(url: str, etag: str | None):
     return r.content, r.headers.get("ETag") or r.headers.get("Last-Modified")
 
 
+def agregar_por_deputado(itens: list[dict]) -> dict:
+    """Por deputado: aprovados, leis e quantos de cada nível de relevância (no total e por ano de aprovação).
+    Relevantes = alto + médio; supérfluos = baixo + simbólico (homenagens, datas, nomes, concessões de rádio/TV).
+    rel_autor = relevantes em que o deputado é o primeiro autor."""
+    por_dep = {}
+    for x in itens:
+        a = x["data"][:4]
+        prim = x["deputados_autores"][0][0] if x["deputados_autores"] else None
+        nv = x["nivel"]
+        for d in x["deputados_autores"]:
+            o = por_dep.setdefault(str(d[0]), {"nome": d[1], "aprovados": 0, "leis": 0, "alto": 0, "medio": 0, "baixo": 0,
+                                                "simbolico": 0, "rel_autor": 0, "ids": [], "anos": {}})
+            rel_autor = nv in ("alto", "medio") and prim == d[0]
+            o["aprovados"] += 1
+            o["leis"] += x["situacao"] == "lei"
+            o[nv] = o.get(nv, 0) + 1
+            o["rel_autor"] += rel_autor
+            o["ids"].append(x["id"])
+            # por ano de aprovação: [aprovados, viraram lei, alta, média, principal autor, baixa, simbólica, relevantes como 1º autor]
+            y = o["anos"].setdefault(a, [0, 0, 0, 0, 0, 0, 0, 0])
+            y[0] += 1; y[1] += x["situacao"] == "lei"; y[2] += nv == "alto"; y[3] += nv == "medio"
+            y[4] += prim == d[0]; y[5] += nv == "baixo"; y[6] += nv == "simbolico"; y[7] += rel_autor
+    return por_dep
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--tudo", action="store_true")
@@ -86,20 +111,7 @@ def main(argv=None):
             todos[it["id"]] = it
     itens = sorted(todos.values(), key=lambda x: (x["data"], x["nota"]), reverse=True)
     niveis = Counter(x["nivel"] for x in itens)
-    por_dep = {}
-    for x in itens:
-        a = x["data"][:4]
-        for d in x["deputados_autores"]:
-            o = por_dep.setdefault(str(d[0]), {"nome": d[1], "aprovados": 0, "leis": 0, "alto": 0, "medio": 0, "ids": [], "anos": {}})
-            o["aprovados"] += 1
-            o["leis"] += x["situacao"] == "lei"
-            o["alto"] += x["nivel"] == "alto"
-            o["medio"] += x["nivel"] == "medio"
-            o["ids"].append(x["id"])
-            # por ano de aprovação: [aprovados, viraram lei, relevância alta, média, principal autor]
-            y = o["anos"].setdefault(a, [0, 0, 0, 0, 0])
-            y[0] += 1; y[1] += x["situacao"] == "lei"; y[2] += x["nivel"] == "alto"; y[3] += x["nivel"] == "medio"
-            y[4] += bool(x["deputados_autores"]) and x["deputados_autores"][0][0] == d[0]
+    por_dep = agregar_por_deputado(itens)
     # arquivos leves para o site: um por ano de aprovação (ementa encurtada) e um resumo
     por_ano = {}
     for x in itens:

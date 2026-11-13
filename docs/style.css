@@ -462,3 +462,7 @@ tfoot .linha-total td { border-top: 2px solid var(--line-2); background: var(--p
   .rf-chips button { flex: none; }
   .rf-painel .filtros-tabela > * { flex: 1 1 100%; width: 100%; }
 }
+
+/* etiqueta de quem aprova projetos relevantes (ranking dos deputados) */
+.etq-relevante { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  color: #0f6a46; background: #E3F4EC; border: 1px solid #9FD5BC; white-space: nowrap; vertical-align: 1px; }
