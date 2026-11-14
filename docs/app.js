@@ -410,16 +410,37 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
       y += story ? 110 : 96; ctx.fillStyle = "#c4161c"; textoAjustado(ctx, brl(d.custo_mandato * F), W - 120, story ? 120 : 104); ctx.fillText(brl(d.custo_mandato * F), 60, y);
       y += 52; ctx.fillStyle = "#252423"; ctx.font = "600 30px Inter, sans-serif";
       ctx.fillText(`${brl(d.custo_mensal_medio * F)} por mês, em média`, 60, y);
-      y += story ? 100 : 66;
-      const comps = COMP.filter(([k]) => d.custos[k] > 0), max = Math.max(...comps.map(([k]) => d.custos[k]), 1), passo = story ? 92 : 64;
-      comps.forEach(([k, rot, cor]) => {
-        if (y + 30 > H - 140) return;
-        ctx.fillStyle = "#3b3a39"; ctx.font = "600 26px Inter, sans-serif"; ctx.fillText(rot, 60, y);
-        ctx.textAlign = "right"; ctx.fillText(brl(d.custos[k] * F), W - 60, y); ctx.textAlign = "left";
-        y += 14; ctx.fillStyle = "#e1dfdd"; ctx.beginPath(); ctx.roundRect(60, y, W - 120, 18, 9); ctx.fill();
-        ctx.fillStyle = css(cor); ctx.beginPath(); ctx.roundRect(60, y, Math.max(18, (W - 120) * d.custos[k] / max), 18, 9); ctx.fill();
-        y += passo - 14;
+      y += story ? 70 : 44;
+      // destaques: projetos aprovados e quem mais recebeu da cota
+      const pj = projDe(d.id, ano), topF = ((d.ceap || {}).top_fornecedores || [])[0];
+      const linhas = [];
+      if (pj) linhas.push([`${nf(pj.aprov)} projeto${pj.aprov === 1 ? "" : "s"} aprovado${pj.aprov === 1 ? "" : "s"}`, `${nf(pj.rel)} de relevância alta ou média · ${nf(pj.sup)} de homenagens, nomes e datas comemorativas`, "#107c41"]);
+      if (topF) linhas.push([`Quem mais recebeu da cota: ${topF.nome}`, `${brl(topF.valor * F)}${String(topF.cnpj_cpf || "").replace(/\D/g, "").length === 14 ? " · CNPJ " + topF.cnpj_cpf : ""}`, "#118dff"]);
+      linhas.forEach(([t1, t2, cor]) => {
+        const hb = story ? 110 : 92;
+        ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.roundRect(60, y, W - 120, hb, 14); ctx.fill();
+        ctx.fillStyle = cor; ctx.beginPath(); ctx.roundRect(60, y, 10, hb, 5); ctx.fill();
+        ctx.fillStyle = "#252423"; let tt = t1; ctx.font = `800 ${story ? 32 : 29}px Inter, sans-serif`;
+        while (ctx.measureText(tt).width > W - 170 && tt.length > 10) tt = tt.slice(0, -2); if (tt !== t1) tt += "…";
+        ctx.fillText(tt, 90, y + (story ? 46 : 39));
+        ctx.fillStyle = "#605e5c"; ctx.font = `500 ${story ? 25 : 23}px Inter, sans-serif`; ctx.fillText(t2, 90, y + (story ? 86 : 73));
+        y += hb + (story ? 22 : 14);
       });
+      y += story ? 60 : 40;
+      // composição do custo: uma barra dividida por cor, com legenda (cabe no feed e no stories)
+      const comps = COMP.filter(([k]) => d.custos[k] > 0), soma0 = comps.reduce((a, [k]) => a + d.custos[k], 0) || 1;
+      let bx = 60;
+      comps.forEach(([k, , cor]) => { const w = (W - 120) * d.custos[k] / soma0; ctx.fillStyle = css(cor); ctx.fillRect(bx, y, Math.max(2, w), story ? 30 : 24); bx += w; });
+      y += (story ? 30 : 24) + (story ? 44 : 36);
+      let lx = 60;
+      ctx.font = `600 ${story ? 25 : 22}px Inter, sans-serif`;
+      comps.forEach(([k, rot, cor]) => {
+        const t = `${rot} ${compacto(d.custos[k] * F)}`, w = ctx.measureText(t).width + 30;
+        if (lx + w > W - 60) { lx = 60; y += story ? 40 : 34; }
+        ctx.fillStyle = css(cor); ctx.beginPath(); ctx.roundRect(lx, y - (story ? 18 : 16), 16, 16, 4); ctx.fill();
+        ctx.fillStyle = "#3b3a39"; ctx.fillText(t, lx + 22, y); lx += w + 18;
+      });
+      y += story ? 60 : 44;
       if (d.previsao?.ativo && y < H - 230) {
         ctx.fillStyle = "#fdf0f8"; ctx.beginPath(); ctx.roundRect(60, y - 4, W - 120, 80, 12); ctx.fill();
         ctx.fillStyle = "#9c2a6f"; ctx.font = "600 27px Inter, sans-serif";
@@ -606,11 +627,11 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
 
   // projetos aprovados por deputado no período escolhido (arquivo dos projetos)
   const REL_MIN = { ano: 1, total: 3 };   // etiqueta: relevantes como 1º autor no ano (ou em todos os anos)
-  function projDe(id) {
+  function projDe(id, ano) {
     const p = E.PD?.[String(id)]; if (!E.PD) return null;
     if (!p) return { aprov: 0, rel: 0, sup: 0, relAutor: 0 };
-    if (ehTotal()) return { aprov: p.aprovados, rel: (p.alto || 0) + (p.medio || 0), sup: (p.baixo || 0) + (p.simbolico || 0), relAutor: p.rel_autor || 0 };
-    const y = (p.anos || {})[String(E.resumo.ano)] || [];
+    if (ano != null ? String(ano).includes("–") : ehTotal()) return { aprov: p.aprovados, rel: (p.alto || 0) + (p.medio || 0), sup: (p.baixo || 0) + (p.simbolico || 0), relAutor: p.rel_autor || 0 };
+    const y = (p.anos || {})[String(ano ?? E.resumo.ano)] || [];
     return { aprov: y[0] || 0, rel: (y[2] || 0) + (y[3] || 0), sup: (y[5] || 0) + (y[6] || 0), relAutor: y[7] || 0 };
   }
   const aprovaRelevantes = (pj) => pj && pj.relAutor >= (ehTotal() ? REL_MIN.total : REL_MIN.ano);
@@ -2163,7 +2184,8 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
       const fo = e.target.closest("[data-forn]");
       if (fo && !e.target.closest("[data-dep]")) { abrirFornecedor(fo.dataset.forn, fo.dataset.ano || E.resumo.ano); return; }
       if (e.target.id === "card-dep" && E.ficha) { const f = E.ficha;
-        abrirCard((fotos) => cardDeputado(f.d, f.ano, f.rs, fotos), `${semAcento(f.d.nome).replace(/\W+/g, "-")}-${f.ano}`, [f.d.id]); return; }
+        (E.PD ? Promise.resolve() : projPorDep().then((pd) => { E.PD = pd || {}; }).catch(() => { E.PD = {}; }))
+          .then(() => abrirCard((fotos) => cardDeputado(f.d, f.ano, f.rs, fotos), `${semAcento(f.d.nome).replace(/\W+/g, "-")}-${f.ano}`, [f.d.id])); return; }
       const dep = e.target.closest("[data-dep]"); if (dep) { abrir(dep.dataset.dep, dep.dataset.ano || E.resumo.ano); return; }
       const tir = e.target.closest("[data-tirar]"); if (tir) { alternarSel(tir.dataset.tirar); renderComparar(); return; }
       const cmp = e.target.closest("[data-comparar]"); if (cmp) { alternarSel(cmp.dataset.comparar); cmp.textContent = E.sel.includes(+cmp.dataset.comparar) ? "Remover da comparação" : "Adicionar à comparação"; return; }
