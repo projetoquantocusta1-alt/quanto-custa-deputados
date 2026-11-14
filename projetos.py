@@ -148,6 +148,19 @@ def main(argv=None):
     for p in sorted(CACHE.glob("*.json")):
         for it in (ler(p, {}) or {}).get("itens", []):
             todos[it["id"]] = it
+    # diagnóstico: guarda o histórico completo de uma amostra de projetos (ids em dados_brutos/projetos_amostra_ids.txt)
+    amostra = RAIZ / "dados_brutos" / "projetos_amostra_ids.txt"
+    if amostra.exists():
+        hist = {}
+        for pid in amostra.read_text().split():
+            try:
+                r = http.sessao().get(config.API_CAMARA + f"/proposicoes/{pid}/tramitacoes", headers={"Accept": "application/json"}, timeout=(20, 60))
+                hist[pid] = {"item": {k: todos.get(int(pid), {}).get(k) for k in ("sigla", "numero", "ano", "apresentacao", "data", "situacao_camara")},
+                             "tramitacoes": r.json().get("dados") if r.status_code == 200 else r.status_code}
+            except Exception as e:  # noqa: BLE001
+                hist[pid] = str(e)
+        gravar(RAIZ / "dados_brutos" / "projetos_amostra_tramitacoes.json", hist)
+        log.info("Amostra de tramitações gravada (%d projetos)", len(hist))
     # ano da APROVAÇÃO (e não da última movimentação, que muda a cada ofício ou recebimento)
     datas = datas_de_aprovacao(list(todos.values()), args.minutos_tramitacao)
     for it in todos.values():
