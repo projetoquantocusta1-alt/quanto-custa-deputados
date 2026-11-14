@@ -216,9 +216,13 @@ def baixar_ceap(ano: int) -> pd.DataFrame:
 
 
 def doc_publico(c: str) -> str:
-    """CNPJ como veio; CPF (11 dígitos, em qualquer formato) mascarado."""
+    """CNPJ com a pontuação certa; CPF (11 dígitos, em qualquer formato) mascarado."""
     d = re.sub(r"\D", "", c or "")
-    return f"***.{d[3:6]}.{d[6:9]}-**" if len(d) == 11 else mascarar_cpf_no_texto(c)
+    if len(d) == 11:
+        return f"***.{d[3:6]}.{d[6:9]}-**"
+    if len(d) == 14:   # a Câmara às vezes manda o CNPJ com a pontuação no lugar errado ("405.751.100/0010-4")
+        return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+    return mascarar_cpf_no_texto(c)
 
 
 def resumir_ceap(df: pd.DataFrame) -> dict[int, dict]:
