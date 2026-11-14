@@ -408,25 +408,27 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
       // valor
       ctx.fillStyle = "#605e5c"; ctx.font = "600 30px Inter, sans-serif"; ctx.fillText("Custou aos cofres públicos", 60, y);
       y += story ? 110 : 96; ctx.fillStyle = "#c4161c"; textoAjustado(ctx, brl(d.custo_mandato * F), W - 120, story ? 120 : 104); ctx.fillText(brl(d.custo_mandato * F), 60, y);
-      y += 52; ctx.fillStyle = "#252423"; ctx.font = "600 30px Inter, sans-serif";
+      const ext = porExtenso(d.custo_mandato * F);
+      if (ext) { y += story ? 50 : 42; ctx.fillStyle = "#c4161c"; ctx.font = `700 ${story ? 34 : 30}px Inter, sans-serif`; ctx.fillText(ext, 60, y); }
+      y += story ? 52 : 44; ctx.fillStyle = "#252423"; ctx.font = "600 30px Inter, sans-serif";
       ctx.fillText(`${brl(d.custo_mensal_medio * F)} por mês, em média`, 60, y);
-      y += story ? 70 : 44;
+      y += story ? 70 : 38;
       // destaques: projetos aprovados e quem mais recebeu da cota
       const pj = projDe(d.id, ano), topF = ((d.ceap || {}).top_fornecedores || [])[0];
       const linhas = [];
       if (pj) linhas.push([`${nf(pj.aprov)} projeto${pj.aprov === 1 ? "" : "s"} aprovado${pj.aprov === 1 ? "" : "s"}`, `${nf(pj.rel)} de relevância alta ou média · ${nf(pj.sup)} de homenagens, nomes e datas comemorativas`, "#107c41"]);
       if (topF) linhas.push([`Quem mais recebeu da cota: ${topF.nome}`, `${brl(topF.valor * F)}${String(topF.cnpj_cpf || "").replace(/\D/g, "").length === 14 ? " · CNPJ " + topF.cnpj_cpf : ""}`, "#118dff"]);
       linhas.forEach(([t1, t2, cor]) => {
-        const hb = story ? 110 : 92;
+        const hb = story ? 110 : 86;
         ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.roundRect(60, y, W - 120, hb, 14); ctx.fill();
         ctx.fillStyle = cor; ctx.beginPath(); ctx.roundRect(60, y, 10, hb, 5); ctx.fill();
         ctx.fillStyle = "#252423"; let tt = t1; ctx.font = `800 ${story ? 32 : 29}px Inter, sans-serif`;
         while (ctx.measureText(tt).width > W - 170 && tt.length > 10) tt = tt.slice(0, -2); if (tt !== t1) tt += "…";
-        ctx.fillText(tt, 90, y + (story ? 46 : 39));
-        ctx.fillStyle = "#605e5c"; ctx.font = `500 ${story ? 25 : 23}px Inter, sans-serif`; ctx.fillText(t2, 90, y + (story ? 86 : 73));
-        y += hb + (story ? 22 : 14);
+        ctx.fillText(tt, 90, y + (story ? 46 : 37));
+        ctx.fillStyle = "#605e5c"; ctx.font = `500 ${story ? 25 : 23}px Inter, sans-serif`; ctx.fillText(t2, 90, y + (story ? 86 : 69));
+        y += hb + (story ? 22 : 12);
       });
-      y += story ? 60 : 40;
+      y += story ? 60 : 16;
       // composição do custo: uma barra dividida por cor, com legenda (cabe no feed e no stories)
       const comps = COMP.filter(([k]) => d.custos[k] > 0), soma0 = comps.reduce((a, [k]) => a + d.custos[k], 0) || 1;
       let bx = 60;
