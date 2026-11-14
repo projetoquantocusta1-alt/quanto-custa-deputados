@@ -471,3 +471,7 @@ tfoot .linha-total td { border-top: 2px solid var(--line-2); background: var(--p
 .extenso { margin: 2px 0 6px; font-size: 15px; font-weight: 700; color: #C84C4C; letter-spacing: .01em; }
 .extenso:empty { display: none; }
 .contador-linha .extenso { display: block; font-size: 12px; margin: 2px 0 0; }
+
+/* caixas de escolha e busca nunca mais largas que a tela (opções com nomes longos estouravam no celular) */
+select, input { max-width: 100%; }
+.filtros-tabela select, .filtros-tabela input { min-width: 0; }
