@@ -78,7 +78,10 @@ def datas_de_aprovacao(itens: list[dict], minutos: float) -> dict[str, str]:
     import time
     from concurrent.futures import ThreadPoolExecutor
     arq = RAIZ / "dados_brutos" / "projetos_aprovacao.json"
-    guard = ler(arq, {}) or {}
+    bruto = ler(arq, {}) or {}
+    # versão 2: regra pelo tipo da movimentação; datas da versão 1 (pela "situação") são descartadas
+    guard = bruto.get("datas", {}) if bruto.get("versao") == 2 else {}
+    apres = {str(x["id"]): x.get("apresentacao") or "" for x in itens}
     falta = [str(x["id"]) for x in itens if str(x["id"]) not in guard]
     log.info("Datas de aprovação: %d guardadas, %d para consultar", len(guard), len(falta))
     ses = http.sessao()
@@ -92,7 +95,7 @@ def datas_de_aprovacao(itens: list[dict], minutos: float) -> dict[str, str]:
             if r.status_code != 200:
                 return pid, None
             time.sleep(0.25)
-            return pid, projetos.data_aprovacao(r.json().get("dados") or []) or ""
+            return pid, projetos.data_aprovacao(r.json().get("dados") or [], apres.get(pid, "")) or ""
         except Exception:  # noqa: BLE001
             return pid, None
     novas = 0
@@ -103,8 +106,8 @@ def datas_de_aprovacao(itens: list[dict], minutos: float) -> dict[str, str]:
                 novas += 1
             if i % 500 == 0:
                 log.info("  %d/%d consultadas", i, len(falta))
-                gravar(arq, guard)
-    gravar(arq, guard)
+                gravar(arq, {"versao": 2, "datas": guard})
+    gravar(arq, {"versao": 2, "datas": guard})
     log.info("Datas de aprovação: %d novas; %d ainda sem data (ficam para a próxima)", novas, len([p for p in falta if p not in guard]))
     return {k: v for k, v in guard.items() if v}
 

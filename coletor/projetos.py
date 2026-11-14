@@ -139,22 +139,33 @@ def relevancia(sigla: str, ementa: str, temas: list[str], keywords: str = "", co
 
 
 # ------------------------------------------------------------- data da aprovação
-_TRAMITACAO_APROVA = re.compile(r"remessa ao senado|remetid[ao] ao senado|envio ao senado|encaminhad[ao] ao senado|"
-                                r"remessa a sancao|enviad[ao] a sancao|encaminhad[ao] a sancao|remessa a promulgacao|"
-                                r"transformad[ao] (em|na) (lei|norma)|promulgad[ao]")
+# Tipos de movimentação (codTipoTramitacao da API da Câmara), em ordem de preferência.
+# Atenção: o campo "descricaoSituacao" de cada movimentação NÃO é a situação daquele dia (a API repete
+# a situação atual em movimentações antigas), por isso só o tipo da movimentação é usado.
+_APROVACAO_TIPOS = [
+    {"128", "609", "1006"},        # remessa ao Senado / à sanção / à promulgação: a Câmara terminou de aprovar
+    {"239", "1235", "244", "510"},  # aprovação da redação final / da proposição em Plenário / redação final dispensada
+    {"251", "1012"},               # transformação em norma jurídica (último recurso)
+]
+_APROVACAO_TEXTO = [
+    r"remessa ao senado|remessa a sancao|remessa a promulgacao",
+    r"aprovacao da redacao final|aprovacao de proposicao( em)? \(?plenario|dispensada a redacao final",
+    r"transformacao em norma juridica|transformado em norma juridica",
+]
 
 
-def data_aprovacao(tramitacoes: list[dict]) -> str | None:
-    """Data em que a proposição foi aprovada na Câmara: a primeira movimentação em que a situação passa a
-    "aprovada" (aguardando o Senado, sanção ou promulgação, virou lei, vetada) ou que registra a remessa ao
-    Senado / à sanção. A situação atual da proposição muda de data a cada nova movimentação (ofícios,
-    recebimentos), por isso não serve para dizer em que ano ela foi aprovada."""
-    for t in sorted(tramitacoes or [], key=lambda t: (str(t.get("dataHora") or ""), int(t.get("sequencia") or 0))):
-        dh = str(t.get("dataHora") or "")[:10]
-        if not dh:
-            continue
-        if situacao(str(t.get("descricaoSituacao") or "")) or _TRAMITACAO_APROVA.search(sem_acento(str(t.get("descricaoTramitacao") or ""))):
-            return dh
+def data_aprovacao(tramitacoes: list[dict], apresentacao: str = "") -> str | None:
+    """Data em que a proposição foi aprovada na Câmara: a primeira remessa ao Senado/à sanção/à promulgação;
+    sem remessa, a aprovação da redação final ou da proposição em Plenário; por último, a transformação em
+    norma jurídica. Movimentações anteriores à apresentação na Câmara (vindas do Senado) são ignoradas."""
+    trs = sorted(tramitacoes or [], key=lambda t: (str(t.get("dataHora") or ""), int(t.get("sequencia") or 0)))
+    for cods, texto in zip(_APROVACAO_TIPOS, _APROVACAO_TEXTO):
+        for t in trs:
+            dh = str(t.get("dataHora") or "")[:10]
+            if not dh or (apresentacao and dh < apresentacao[:10]):
+                continue
+            if str(t.get("codTipoTramitacao") or "") in cods or re.search(texto, sem_acento(str(t.get("descricaoTramitacao") or ""))):
+                return dh
     return None
 
 
