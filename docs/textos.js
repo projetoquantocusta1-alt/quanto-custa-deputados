@@ -17,12 +17,15 @@ window.TEXTOS = {
   // Quando trocar o texto, mude também "versao" para mostrar de novo a quem já viu.
   boas_vindas: {
     ativo: true,
-    versao: 1,
+    versao: 2,
     titulo: "Bem-vindo ao Projeto Quanto Custa",
     texto: [
-      "Aqui você descobre quanto custa cada deputado federal, com dados oficiais da Câmara, atualizados todos os dias e corrigidos pela inflação.",
-      "Pesquise o seu deputado, veja quanto ele gasta, com quem gasta, se vai às sessões e quais projetos aprovou. Tudo com a fonte de cada número.",
-      "[Texto provisório — troque pelo seu em docs/textos.js, no bloco boas_vindas.]",
+      "Este projeto nasceu para acompanhar os gastos públicos e mostrar a cada brasileiro o que está sendo feito com o nosso dinheiro.",
+      "Os dados são oficiais, abertos e atualizados todos os dias. Use-os para acompanhar quem você elegeu, comparar, perguntar e cobrar. Fiscalizar é um direito e também um dever de todo cidadão.",
+      "Pesquisadores, estudantes e jornalistas: os dados são livres para uso. Pedimos apenas que citem o Projeto Quanto Custa como fonte.",
+      "Este trabalho é independente e feito com muita dedicação, para que a informação pública seja, de fato, pública.",
+      "<b>Por um Brasil mais forte e mais justo.</b>",
+      "<i>— Sociedade do Progresso</i>",
     ],
   },
 
