@@ -182,7 +182,8 @@ def ler_ceap_csv(conteudo: bytes) -> pd.DataFrame:
         "cnpj_cpf": df["txtCNPJCPF"].fillna("").str.strip(),
         "valor": df["vlrLiquido"].map(br_para_float),
         "glosa": df["vlrGlosa"].map(br_para_float) if "vlrGlosa" in df.columns else 0.0,
-        "numero": _col_txt(df, "txtNumero"),
+        # nº do documento: às vezes é o CPF de quem emitiu o recibo (pessoa física) — sai mascarado
+        "numero": _col_txt(df, "txtNumero").map(mascarar_cpf_no_texto) if "txtNumero" in df.columns else "",
         "url": _col_txt(df, "urlDocumento"),
         "passageiro": _col_txt(df, "txtPassageiro"),
         "trecho": _col_txt(df, "txtTrecho"),
