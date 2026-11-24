@@ -511,7 +511,7 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
     const b = await blobCard(), arq = new File([b], CARD.nome + ".png", { type: "image/png" });
     const url = location.origin + location.pathname;
     if (navigator.canShare && navigator.canShare({ files: [arq] })) {
-      try { await navigator.share({ files: [arq], title: "Projeto Quanto Custa", text: `Veja mais em ${url}` }); } catch { /* cancelado */ }
+      try { await navigator.share({ files: [arq], title: "Quanto Custa", text: `Veja mais em ${url}` }); } catch { /* cancelado */ }
     } else baixarCard();
   }
 
