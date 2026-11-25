@@ -235,9 +235,10 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
     const cota = D.reduce((s, d) => s + (d.custos?.cota_parlamentar || 0), 0) * F;
     const k = (rot, v, o) => `<div class="kpi"><div class="rot">${rot}</div><div class="val num">${v}</div><div class="obs">${o}</div></div>`;
     const tot = ehTotal(r), nAnos = tot ? Math.max(1, (E.historico?.anos || []).filter((a) => a.deputados > 0).length) : 1;
-    el.innerHTML = k("Custo total dos deputados", brlCurto(total), tot ? "soma de todos os anos, em valores de hoje" : `em ${r.ano}, em valores de hoje`)
-      + k("Custo médio por cadeira", brlCurto(total / 513 / nAnos), tot ? `por ano (513 vagas, média de ${nAnos} anos)` : `em ${r.ano} (513 vagas)`)
-      + k("Cota parlamentar", brlCurto(cota), tot ? "soma de todos os anos" : `usada em ${r.ano}`)
+    const ate = !tot && r.meses_decorridos > 0 && r.meses_decorridos < 12 ? ` até ${MESES[r.meses_decorridos - 1].toLowerCase()}` : "";
+    el.innerHTML = k("Custo total dos deputados", brlCurto(total), tot ? "soma de todos os anos, em valores de hoje" : `registrado em ${r.ano}${ate}, em valores de hoje`)
+      + k("Custo médio por cadeira", brlCurto(total / 513 / nAnos), tot ? `por ano (513 vagas, média de ${nAnos} anos)` : `em ${r.ano}${ate} (513 vagas)`)
+      + k("Cota parlamentar", brlCurto(cota), tot ? "soma de todos os anos" : `usada em ${r.ano}${ate}`)
       + k("Parlamentares analisados", D.length.toLocaleString("pt-BR"), "inclui suplentes que assumiram");
     const dl = $("#i-busca-lista");
     if (dl && !dl.options.length) dl.innerHTML = D.map((d) => `<option value="${esc(d.nome)}">${esc(d.partido)} · ${esc(d.uf)}</option>`).join("");
