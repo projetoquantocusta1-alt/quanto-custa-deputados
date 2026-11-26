@@ -468,7 +468,7 @@ tfoot .linha-total td { border-top: 2px solid var(--line-2); background: var(--p
   color: #0f6a46; background: #E3F4EC; border: 1px solid #9FD5BC; white-space: nowrap; vertical-align: 1px; }
 
 /* leitura por extenso abaixo dos números grandes */
-.extenso { margin: 2px 0 6px; font-size: 15px; font-weight: 700; color: #C84C4C; letter-spacing: .01em; }
+.extenso { margin: 2px 0 6px; font-size: 15px; font-weight: 700; color: #c4161c; letter-spacing: .01em; }
 .extenso:empty { display: none; }
 .contador-linha .extenso { display: block; font-size: 12px; margin: 2px 0 0; }
 
