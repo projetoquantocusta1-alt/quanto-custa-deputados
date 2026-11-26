@@ -184,13 +184,14 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
       const resto = (ja / r.meses_decorridos) * (12 - r.meses_decorridos);
       porSeg = resto / ((fim - ini) / 1000); teto = ja + resto;
     }
-    $("#imp-seg").textContent = porSeg ? brl(porSeg, 2) : "—";
-    $("#imp-dia").textContent = porSeg ? compacto(porSeg * 86400) : "—";
-    $("#imp-prev").textContent = compacto(teto);
+    const FI = r.fator_ipca || 1;   // "Só em <ano>" em valores de hoje, como o resto da página
+    $("#imp-seg").textContent = porSeg ? brl(porSeg * FI, 2) : "—";
+    $("#imp-dia").textContent = porSeg ? compacto(porSeg * 86400 * FI) : "—";
+    $("#imp-prev").textContent = compacto(teto * FI);
     cancelAnimationFrame(tick);
     const passo = () => {
       const v = Math.min(teto, ja + Math.max(0, (Date.now() - ini) / 1000) * porSeg);
-      $("#imp-valor").textContent = brl(v, 2);
+      $("#imp-valor").textContent = brl(v * FI, 2);
       $("#imp-total").textContent = brl(totalAnt + v * (r.fator_ipca || 1), 0);
       $("#imp-total-ext").textContent = porExtenso(totalAnt + v * (r.fator_ipca || 1));
       $("#imp-valor-ext").textContent = porExtenso(v);
