@@ -204,7 +204,7 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
   function kpis(el, itens) {
     el.innerHTML = itens.map(([rot, val, obs, cor, delta]) => {
       const dl = delta == null || !isFinite(delta) ? "" : `<span class="delta ${delta >= 0 ? "sobe" : "desce"}">${delta >= 0 ? "▲" : "▼"} ${nf(Math.abs(delta * 100), 1)}%</span>`;
-      return `<div class="kpi" style="--k:${cor || css("--accent")}"><div class="rot">${esc(rot)}</div><div class="val num">${val}${dl}</div><div class="obs">${esc(obs || "")}</div></div>`;
+      return `<div class="kpi" style="--k:${cor || css("--accent")}"><div class="rot">${rot}</div><div class="val num">${val}${dl}</div><div class="obs">${obs || ""}</div></div>`;
     }).join("");
   }
   // variação contra o ano anterior (com os mesmos filtros), em valores de hoje
@@ -234,7 +234,7 @@ const porExtenso = (v) => { const a = Math.abs(v || 0);
     const F = r.fator_ipca || 1, D = r.deputados || [];
     const total = (r.total_camara || D.reduce((s, d) => s + (d.custo_mandato || 0), 0)) * F;
     const cota = D.reduce((s, d) => s + (d.custos?.cota_parlamentar || 0), 0) * F;
-    const k = (rot, v, o) => `<div class="kpi"><div class="rot">${esc(rot)}</div><div class="val num">${v}</div><div class="obs">${esc(o)}</div></div>`;
+    const k = (rot, v, o) => `<div class="kpi"><div class="rot">${rot}</div><div class="val num">${v}</div><div class="obs">${o}</div></div>`;
     const tot = ehTotal(r), nAnos = tot ? Math.max(1, (E.historico?.anos || []).filter((a) => a.deputados > 0).length) : 1;
     const ate = !tot && r.meses_decorridos > 0 && r.meses_decorridos < 12 ? ` até ${MESES[r.meses_decorridos - 1].toLowerCase()}` : "";
     el.innerHTML = k("Custo total dos deputados", brlCurto(total), tot ? "soma de todos os anos, em valores de hoje" : `registrado em ${r.ano}${ate}, em valores de hoje`)
